@@ -1,161 +1,233 @@
 {% extends "layout.html" %}
+{% block title %}ユーザー管理 | 出退勤システム{% endblock %}
 {% block content %}
-<div class="card shadow-sm">
+<header class="page-header">
+  <h1 class="page-title h3">ユーザー管理</h1>
+  <p class="text-muted mb-0">ユーザーの作成・更新・削除を行います。変更内容は監査ログに記録されます。</p>
+</header>
+
+<section class="card section-card mb-3">
   <div class="card-body">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
-      <div>
-        <h2 class="h5 mb-0">ユーザー管理</h2>
-      </div>
-      <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-secondary" href="{{ url_for('admin') }}">出退勤記録に戻る</a>
-      </div>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <h2 class="section-title mb-0">新規ユーザー作成</h2>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.dashboard') }}">出退勤記録に戻る</a>
     </div>
 
-    <div class="card mb-4">
-      <div class="card-header">
-        <h3 class="h6 mb-0">新規ユーザー作成</h3>
+    <form method="post" class="row g-3">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+      <input type="hidden" name="action" value="create">
+      <div class="col-md-3">
+        <label class="form-label" for="new-username">ユーザーID <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="new-username" name="username" required>
       </div>
-      <div class="card-body">
-        <form method="post" class="row g-3">
-          <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-          <input type="hidden" name="action" value="create">
-          <div class="col-md-3">
-            <label class="form-label">ユーザーID <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" name="username" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">パスワード <span class="text-danger">*</span></label>
-            <input type="password" class="form-control" name="password" required>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">氏名</label>
-            <input type="text" class="form-control" name="name">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">メール</label>
-            <input type="email" class="form-control" name="email">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">権限</label>
-            <select class="form-select" name="role">
-              <option value="user">一般ユーザー</option>
-              <option value="admin">管理者</option>
-            </select>
-          </div>
-          <div class="col-12">
-            <button type="submit" class="btn btn-primary">作成</button>
-          </div>
-        </form>
+      <div class="col-md-3">
+        <label class="form-label" for="new-password">パスワード <span class="text-danger">*</span></label>
+        <input type="password" class="form-control" id="new-password" name="password" required>
       </div>
-    </div>
+      <div class="col-md-2">
+        <label class="form-label" for="new-name">氏名</label>
+        <input type="text" class="form-control" id="new-name" name="name">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="new-email">メール</label>
+        <input type="email" class="form-control" id="new-email" name="email">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="new-role">権限</label>
+        <select class="form-select" id="new-role" name="role">
+          <option value="user">一般ユーザー</option>
+          <option value="admin">管理者</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">作成</button>
+      </div>
+    </form>
+  </div>
+</section>
 
-    <div class="table-responsive">
-      <table class="table table-sm align-middle table-stack" aria-label="ユーザー一覧">
+<section class="card section-card">
+  <div class="card-body">
+    <h2 class="section-title">ユーザー一覧</h2>
+
+    {% if users %}
+    <div class="table-wrap desktop-only">
+      <table class="table table-sm align-middle mb-0" aria-label="ユーザー一覧">
         <thead class="table-light">
           <tr>
-            <th>ユーザーID</th>
-            <th>氏名</th>
-            <th>メール</th>
-            <th>権限</th>
-            <th>最終ログイン</th>
-            <th>作成日時</th>
-            <th>操作</th>
+            <th scope="col">ユーザーID</th>
+            <th scope="col">氏名</th>
+            <th scope="col">メール</th>
+            <th scope="col">権限</th>
+            <th scope="col">最終ログイン</th>
+            <th scope="col">作成日時</th>
+            <th scope="col">操作</th>
           </tr>
         </thead>
         <tbody>
           {% for user in users %}
           <tr>
-            <td data-label="ユーザーID">
-              <div class="fw-semibold">{{ user.username }}</div>
-            </td>
-            <td data-label="氏名">{{ user.name or '-' }}</td>
-            <td data-label="メール">{{ user.email or '-' }}</td>
-            <td data-label="権限">
+            <td class="fw-semibold">{{ user.username }}</td>
+            <td>{{ user.name or '-' }}</td>
+            <td>{{ user.email or '-' }}</td>
+            <td>
               {% if user.role == 'admin' %}
                 <span class="badge bg-danger">管理者</span>
               {% else %}
                 <span class="badge bg-secondary">一般</span>
               {% endif %}
             </td>
-            <td data-label="最終ログイン">{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</td>
-            <td data-label="作成日時">{{ user.created_at|fmt_dt }}</td>
-            <td data-label="操作">
-              <div class="d-flex flex-column flex-lg-row gap-2">
-                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ user.id }}">
+            <td>{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</td>
+            <td>{{ user.created_at|fmt_dt }}</td>
+            <td>
+              <div class="table-actions">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  data-user-edit
+                  data-user-id="{{ user.id }}"
+                  data-user-username="{{ user.username|e }}"
+                  data-user-name="{{ (user.name or '')|e }}"
+                  data-user-email="{{ (user.email or '')|e }}"
+                  data-user-role="{{ user.role }}"
+                >
                   編集
                 </button>
                 {% if user.id != current_user.id %}
-                <form method="post" style="display: inline;" onsubmit="return confirm('本当にこのユーザーを削除しますか？');">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  data-confirm-form="delete-user-{{ user.id }}"
+                  data-confirm-title="ユーザーを削除"
+                  data-confirm-message="このユーザーを削除します。関連監査ログの user_id は解除されます。"
+                  data-confirm-danger="対象ユーザー: {{ user.username }}"
+                >
+                  削除
+                </button>
+                <form id="delete-user-{{ user.id }}" method="post" class="d-none">
                   <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="user_id" value="{{ user.id }}">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
                 </form>
                 {% endif %}
               </div>
             </td>
           </tr>
-
-          <!-- 編集モーダル -->
-          <div class="modal fade" id="editModal{{ user.id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <form method="post">
-                  <div class="modal-header">
-                    <h5 class="modal-title">ユーザー編集: {{ user.username }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-                  </div>
-                  <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-                    <input type="hidden" name="action" value="update">
-                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                    <div class="mb-3">
-                      <label class="form-label">ユーザーID</label>
-                      <input type="text" class="form-control" value="{{ user.username }}" disabled>
-                      <div class="form-text">ユーザーIDは変更できません</div>
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">パスワード</label>
-                      <input type="password" class="form-control" name="password" placeholder="変更する場合のみ入力">
-                      <div class="form-text">変更しない場合は空欄のまま</div>
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">氏名</label>
-                      <input type="text" class="form-control" name="name" value="{{ user.name or '' }}">
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">メール</label>
-                      <input type="email" class="form-control" name="email" value="{{ user.email or '' }}">
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label">権限</label>
-                      <select class="form-select" name="role">
-                        <option value="user" {% if user.role == 'user' %}selected{% endif %}>一般ユーザー</option>
-                        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>管理者</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                    <button type="submit" class="btn btn-primary">更新</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-          {% else %}
-          <tr>
-            <td colspan="7" class="text-muted" data-label="検索結果">ユーザーが登録されていません</td>
-          </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
+    <div class="mobile-only">
+      <div class="mobile-record-list">
+        {% for user in users %}
+        <article class="mobile-record-card">
+          <div class="mobile-record-title">
+            <strong>{{ user.username }}</strong>
+            {% if user.role == 'admin' %}
+            <span class="badge bg-danger">管理者</span>
+            {% else %}
+            <span class="badge bg-secondary">一般</span>
+            {% endif %}
+          </div>
+          <dl class="mobile-record-grid">
+            <dt>氏名</dt>
+            <dd>{{ user.name or '-' }}</dd>
+            <dt>メール</dt>
+            <dd>{{ user.email or '-' }}</dd>
+            <dt>最終ログイン</dt>
+            <dd>{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</dd>
+            <dt>作成日時</dt>
+            <dd>{{ user.created_at|fmt_dt }}</dd>
+          </dl>
+          <div class="table-actions mt-3">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              data-user-edit
+              data-user-id="{{ user.id }}"
+              data-user-username="{{ user.username|e }}"
+              data-user-name="{{ (user.name or '')|e }}"
+              data-user-email="{{ (user.email or '')|e }}"
+              data-user-role="{{ user.role }}"
+            >
+              編集
+            </button>
+            {% if user.id != current_user.id %}
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-confirm-form="delete-user-{{ user.id }}"
+              data-confirm-title="ユーザーを削除"
+              data-confirm-message="このユーザーを削除します。関連監査ログの user_id は解除されます。"
+              data-confirm-danger="対象ユーザー: {{ user.username }}"
+            >
+              削除
+            </button>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state">ユーザーが登録されていません。上のフォームから作成してください。</div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalTitle" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="userEditForm">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="userEditModalTitle">ユーザー編集</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+          <input type="hidden" name="action" value="update">
+          <input type="hidden" name="user_id" id="edit-user-id">
+
+          <div class="mb-3">
+            <label class="form-label" for="edit-username">ユーザーID</label>
+            <input type="text" class="form-control" id="edit-username" disabled>
+            <div class="form-hint">ユーザーIDは変更できません。</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="edit-password">パスワード</label>
+            <input type="password" class="form-control" id="edit-password" name="password" placeholder="変更する場合のみ入力">
+            <div class="form-hint">変更しない場合は空欄のままにしてください。</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="edit-name">氏名</label>
+            <input type="text" class="form-control" id="edit-name" name="name">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="edit-email">メール</label>
+            <input type="email" class="form-control" id="edit-email" name="email">
+          </div>
+          <div class="mb-0">
+            <label class="form-label" for="edit-role">権限</label>
+            <select class="form-select" id="edit-role" name="role">
+              <option value="user">一般ユーザー</option>
+              <option value="admin">管理者</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
+          <button type="submit" class="btn btn-primary">更新</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+
+{% include "partials/confirm_modal.html" %}
 {% endblock %}
 
-
-
-
-
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin_confirm_modal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_users_modal.js') }}"></script>
+{% endblock %}

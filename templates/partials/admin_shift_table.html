@@ -1,0 +1,108 @@
+<div class="mt-4">
+  {% if shifts %}
+  <div class="table-wrap desktop-only">
+    <table class="table table-sm align-middle mb-0" aria-label="シフト一覧">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">ユーザー</th>
+          <th scope="col">出勤</th>
+          <th scope="col">退勤</th>
+          <th scope="col">実働 / 休憩</th>
+          <th scope="col">IP (in/out)</th>
+          <th scope="col">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in shifts %}
+        <tr class="{% if s.is_open %}table-warning{% endif %}">
+          <td>
+            <div class="fw-semibold">{{ s.user.name or s.user.username }}</div>
+            <div class="text-muted small">{{ s.user.username }}{% if s.user.email %} ({{ s.user.email }}){% endif %}</div>
+          </td>
+          <td>
+            <div>{{ s.clock_in_at|fmt_dt }}</div>
+            {% if s.is_open %}<span class="badge bg-warning-subtle text-warning-emphasis border">出勤中</span>{% endif %}
+          </td>
+          <td>{{ s.clock_out_at|fmt_dt }}</td>
+          <td>
+            <div class="fw-semibold">{{ s.worked_seconds()|fmt_hms }}</div>
+            <div class="text-muted small">休憩 {{ s.breaks|length }} / {{ s.total_break_seconds()|fmt_hms }}</div>
+          </td>
+          <td class="small">
+            <div>{{ s.clock_in_ip or '-' }}</div>
+            <div>{{ s.clock_out_ip or '-' }}</div>
+          </td>
+          <td>
+            <div class="table-actions">
+              <button type="button" class="btn btn-sm btn-outline-primary" data-shift-edit="{{ s.id }}" data-detail-url="{{ url_for('admin.shift_detail', shift_id=s.id) }}" data-action-url="{{ url_for('admin.shift_edit', shift_id=s.id) }}">
+                編集
+              </button>
+              <a href="{{ url_for('admin.shift_edit', shift_id=s.id) }}" class="btn btn-sm btn-outline-secondary">詳細画面</a>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                data-confirm-form="delete-shift-{{ s.id }}"
+                data-confirm-title="シフトを削除"
+                data-confirm-message="この出退勤記録を削除します。元に戻せません。"
+                data-confirm-danger="対象: {{ s.user.username }} / 出勤 {{ s.clock_in_at|fmt_dt }}"
+              >
+                削除
+              </button>
+            </div>
+            <form id="delete-shift-{{ s.id }}" method="POST" action="{{ url_for('admin.shift_delete', shift_id=s.id) }}" class="d-none">
+              <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+              <input type="hidden" name="start" value="{{ start }}">
+              <input type="hidden" name="end" value="{{ end }}">
+              <input type="hidden" name="username" value="{{ user_username }}">
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-only">
+    <div class="mobile-record-list">
+      {% for s in shifts %}
+      <article class="mobile-record-card">
+        <div class="mobile-record-title">
+          <strong>{{ s.user.name or s.user.username }}</strong>
+          {% if s.is_open %}<span class="badge bg-warning-subtle text-warning-emphasis border">出勤中</span>{% endif %}
+        </div>
+        <dl class="mobile-record-grid">
+          <dt>ユーザーID</dt>
+          <dd>{{ s.user.username }}</dd>
+          <dt>出勤</dt>
+          <dd>{{ s.clock_in_at|fmt_dt }}</dd>
+          <dt>退勤</dt>
+          <dd>{{ s.clock_out_at|fmt_dt }}</dd>
+          <dt>実働 / 休憩</dt>
+          <dd>{{ s.worked_seconds()|fmt_hms }} / {{ s.total_break_seconds()|fmt_hms }}</dd>
+          <dt>IP (in/out)</dt>
+          <dd>{{ s.clock_in_ip or '-' }} / {{ s.clock_out_ip or '-' }}</dd>
+        </dl>
+        <div class="table-actions mt-3">
+          <button type="button" class="btn btn-sm btn-outline-primary" data-shift-edit="{{ s.id }}" data-detail-url="{{ url_for('admin.shift_detail', shift_id=s.id) }}" data-action-url="{{ url_for('admin.shift_edit', shift_id=s.id) }}">
+            編集
+          </button>
+          <a href="{{ url_for('admin.shift_edit', shift_id=s.id) }}" class="btn btn-sm btn-outline-secondary">詳細画面</a>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger"
+            data-confirm-form="delete-shift-{{ s.id }}"
+            data-confirm-title="シフトを削除"
+            data-confirm-message="この出退勤記録を削除します。元に戻せません。"
+            data-confirm-danger="対象: {{ s.user.username }} / 出勤 {{ s.clock_in_at|fmt_dt }}"
+          >
+            削除
+          </button>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">該当するシフトがありません。期間またはユーザー条件を変更してください。</div>
+  {% endif %}
+</div>

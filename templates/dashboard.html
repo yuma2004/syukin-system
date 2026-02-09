@@ -1,90 +1,146 @@
 {% extends "layout.html" %}
+{% block title %}ダッシュボード | 出退勤システム{% endblock %}
 {% block content %}
-<div class="row">
-  <div class="col-lg-6">
-    <div class="card shadow-sm mb-3">
+{% if open_shift %}
+  {% if open_break %}
+    {% set status_text = "休憩中" %}
+    {% set status_class = "status-pill--break" %}
+  {% else %}
+    {% set status_text = "勤務中" %}
+    {% set status_class = "status-pill--active" %}
+  {% endif %}
+{% else %}
+  {% set status_text = "非勤務" %}
+  {% set status_class = "status-pill--idle" %}
+{% endif %}
+
+<header class="page-header">
+  <h1 class="page-title h3">勤務ダッシュボード</h1>
+  <p class="text-muted mb-0">現在の勤務状態、直近の打刻、管理情報を1画面で確認できます。</p>
+</header>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <section class="card section-card h-100">
       <div class="card-body">
-        <h2 class="h5">ダッシュボード</h2>
-        <form method="post" action="" class="mt-3 d-flex gap-2 flex-wrap">
+        <h2 class="section-title">現在の勤務状態</h2>
+        <p class="section-subtitle">打刻操作はこのセクションから実行できます。</p>
+
+        <p class="mb-3">
+          <span class="status-pill {{ status_class }}">
+            <span class="status-dot" aria-hidden="true"></span>
+            {{ status_text }}
+          </span>
+        </p>
+
+        <form method="post" action="" class="action-cluster mb-3" aria-label="打刻操作">
           <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
           {% if not open_shift %}
-            <button formaction="{{ url_for('clock_in') }}" class="btn btn-success">出勤</button>
+            <button formaction="{{ url_for('attendance.clock_in') }}" class="btn btn-success">出勤を記録</button>
           {% else %}
-            <button formaction="{{ url_for('clock_out') }}" class="btn btn-danger">退勤</button>
+            <button formaction="{{ url_for('attendance.clock_out') }}" class="btn btn-danger">退勤を記録</button>
             {% if not open_break %}
-              <button formaction="{{ url_for('break_start') }}" class="btn btn-outline-secondary">休憩開始</button>
+              <button formaction="{{ url_for('attendance.break_start') }}" class="btn btn-outline-secondary">休憩開始</button>
             {% else %}
-              <button formaction="{{ url_for('break_end') }}" class="btn btn-secondary">休憩終了</button>
+              <button formaction="{{ url_for('attendance.break_end') }}" class="btn btn-secondary">休憩終了</button>
             {% endif %}
           {% endif %}
         </form>
 
-        <div class="mt-3">
-          <dl class="row mb-0">
-            <dt class="col-4">勤務状態</dt>
-            <dd class="col-8">
-              {% if not open_shift %}
-                非勤務
-              {% else %}
-                勤務中
-                {% if open_break %}（休憩中）{% endif %}
-              {% endif %}
-            </dd>
-            <dt class="col-4">出勤</dt>
-            <dd class="col-8">{{ open_shift.clock_in_at|fmt_dt if open_shift else '-' }}</dd>
-            <dt class="col-4">休憩</dt>
-            <dd class="col-8">{% if open_break %}開始: {{ open_break.start_at|fmt_dt }}{% else %}-{% endif %}</dd>
-          </dl>
-        </div>
+        <dl class="data-list">
+          <dt>出勤時刻</dt>
+          <dd>{{ open_shift.clock_in_at|fmt_dt if open_shift else '-' }}</dd>
+          <dt>休憩状態</dt>
+          <dd>
+            {% if open_break %}
+              休憩中（開始: {{ open_break.start_at|fmt_dt }}）
+            {% elif open_shift %}
+              休憩なし
+            {% else %}
+              -
+            {% endif %}
+          </dd>
+          <dt>表示タイムゾーン</dt>
+          <dd>{{ LOCAL_TZ_NAME }}</dd>
+        </dl>
       </div>
-    </div>
+    </section>
   </div>
 
-  <div class="col-lg-6">
-    <div class="card shadow-sm mb-3">
+  <div class="col-lg-7">
+    <section class="card section-card h-100">
       <div class="card-body">
-        <h2 class="h5 mb-3">最近の打刻</h2>
-        <div class="table-responsive">
-          <table class="table table-sm align-middle table-stack" aria-label="最近の打刻">
-            <thead>
+        <h2 class="section-title">最近の打刻</h2>
+        <p class="section-subtitle">最新10件を表示しています。</p>
+
+        {% if recent %}
+        <div class="table-wrap desktop-only">
+          <table class="table table-sm align-middle mb-0" aria-label="最近の打刻">
+            <thead class="table-light">
               <tr>
-                <th>ID</th>
-                <th>出勤</th>
-                <th>退勤</th>
-                <th>休憩合計</th>
-                <th>実働</th>
+                <th scope="col">ID</th>
+                <th scope="col">出勤</th>
+                <th scope="col">退勤</th>
+                <th scope="col">休憩合計</th>
+                <th scope="col">実働</th>
               </tr>
             </thead>
             <tbody>
               {% for s in recent %}
               <tr>
-                <td data-label="ID">#{{ s.id }}</td>
-                <td data-label="出勤">{{ s.clock_in_at|fmt_dt }}</td>
-                <td data-label="退勤">{{ s.clock_out_at|fmt_dt }}</td>
-                <td data-label="休憩合計">{{ s.total_break_seconds()|fmt_hms }}</td>
-                <td data-label="実働">{{ s.worked_seconds()|fmt_hms }}</td>
+                <td>#{{ s.id }}</td>
+                <td>{{ s.clock_in_at|fmt_dt }}</td>
+                <td>{{ s.clock_out_at|fmt_dt }}</td>
+                <td>{{ s.total_break_seconds()|fmt_hms }}</td>
+                <td class="fw-semibold">{{ s.worked_seconds()|fmt_hms }}</td>
               </tr>
-              {% else %}
-              <tr><td colspan="5" class="text-muted">記録がありません。</td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-        <p class="text-muted small mb-0">* すべての時刻は {{ LOCAL_TZ_NAME }} 表示、保存はUTC。</p>
+
+        <div class="mobile-only">
+          <div class="mobile-record-list">
+            {% for s in recent %}
+            <article class="mobile-record-card">
+              <div class="mobile-record-title">
+                <strong>#{{ s.id }}</strong>
+                <span class="text-muted small">{{ s.clock_in_at|fmt_dt }}</span>
+              </div>
+              <dl class="mobile-record-grid">
+                <dt>退勤</dt>
+                <dd>{{ s.clock_out_at|fmt_dt }}</dd>
+                <dt>休憩合計</dt>
+                <dd>{{ s.total_break_seconds()|fmt_hms }}</dd>
+                <dt>実働</dt>
+                <dd>{{ s.worked_seconds()|fmt_hms }}</dd>
+              </dl>
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <p class="mb-2">打刻記録がありません。</p>
+          <p class="mb-0 small text-muted">最初の勤務開始時に「出勤を記録」を押してください。</p>
+        </div>
+        {% endif %}
+
+        <p class="text-muted small mb-0 mt-3">すべての時刻は {{ LOCAL_TZ_NAME }} 表示、保存はUTCです。</p>
       </div>
-    </div>
+    </section>
   </div>
 </div>
 
 {% if admin_overview %}
-<div class="card shadow-sm">
+<section class="card section-card mt-3">
   <div class="card-body">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
       <div>
-        <h2 class="h5 mb-1">管理者パネル</h2>
-        <div class="text-muted small">対象期間: {{ admin_overview.start }} ～ {{ admin_overview.end }}（{{ LOCAL_TZ_NAME }}）</div>
+        <h2 class="section-title mb-1">管理者サマリー</h2>
+        <p class="section-subtitle mb-0">対象期間: {{ admin_overview.start }} ～ {{ admin_overview.end }}（{{ LOCAL_TZ_NAME }}）</p>
       </div>
-      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin') }}">詳細管理画面へ</a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.dashboard') }}">詳細管理画面へ</a>
     </div>
 
     {% set daily = admin_overview.daily_totals %}
@@ -97,67 +153,125 @@
 
     <div class="row g-3">
       <div class="col-lg-4">
-        <div class="border rounded p-3 h-100">
-          <div class="fw-semibold mb-2">日別集計</div>
-          <div class="small text-muted mb-2">直近 {{ daily|length }} 日 / 実働 {{ summary.total_seconds|fmt_hms }} / シフト数 {{ summary.total_shifts }}</div>
+        <div class="surface-subtle p-3 h-100">
+          <h3 class="h6 mb-2">日別集計</h3>
+          <div class="metrics-grid mb-3">
+            <div class="metric-card">
+              <div class="metric-label">合計実働</div>
+              <div class="metric-value">{{ summary.total_seconds|fmt_hms }}</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">シフト数</div>
+              <div class="metric-value">{{ summary.total_shifts }}</div>
+            </div>
+          </div>
           {% if daily %}
-          <table class="table table-sm table-borderless mb-0 small">
-            <tbody>
+          <div class="table-wrap desktop-only">
+            <table class="table table-sm mb-0" aria-label="日別集計">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">日付</th>
+                  <th scope="col">実働</th>
+                  <th scope="col">件数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for day in daily[:6] %}
+                <tr>
+                  <td>{{ day.date|fmt_date_ja }}</td>
+                  <td>{{ day.worked_hms }}</td>
+                  <td>{{ day.count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-only">
+            <div class="mobile-record-list">
               {% for day in daily[:6] %}
-              <tr>
-                <th class="text-nowrap">{{ day.date|fmt_date_ja }}</th>
-                <td class="text-end">{{ day.worked_hms }}</td>
-                <td class="text-end text-muted">{{ day.count }}件</td>
-              </tr>
+              <article class="mobile-record-card">
+                <div class="mobile-record-title">
+                  <strong>{{ day.date|fmt_date_ja }}</strong>
+                </div>
+                <dl class="mobile-record-grid">
+                  <dt>実働</dt>
+                  <dd>{{ day.worked_hms }}</dd>
+                  <dt>件数</dt>
+                  <dd>{{ day.count }}</dd>
+                </dl>
+              </article>
               {% endfor %}
-            </tbody>
-          </table>
+            </div>
+          </div>
           {% else %}
           <p class="text-muted small mb-0">集計対象のシフトがありません。</p>
           {% endif %}
         </div>
       </div>
+
       <div class="col-lg-8">
-        <div class="border rounded p-3 h-100">
+        <div class="surface-subtle p-3 h-100">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="fw-semibold">シフト一覧（最新5件）</div>
-            <a href="{{ url_for('admin') }}" class="small text-decoration-underline">もっと見る</a>
+            <h3 class="h6 mb-0">最新シフト（5件）</h3>
+            <a href="{{ url_for('admin.dashboard') }}" class="small text-decoration-underline">もっと見る</a>
           </div>
-          <div class="table-responsive">
-            <table class="table table-sm align-middle table-stack mb-0" aria-label="管理者用シフト一覧">
+
+          {% if shifts_preview %}
+          <div class="table-wrap desktop-only">
+            <table class="table table-sm align-middle mb-0" aria-label="管理者用シフト一覧">
               <thead class="table-light">
                 <tr>
-                  <th>ユーザー</th>
-                  <th>出勤</th>
-                  <th>退勤</th>
-                  <th>実働/休憩</th>
+                  <th scope="col">ユーザー</th>
+                  <th scope="col">出勤</th>
+                  <th scope="col">退勤</th>
+                  <th scope="col">実働/休憩</th>
                 </tr>
               </thead>
               <tbody>
                 {% for s in shifts_preview %}
                 <tr>
-                  <td data-label="ユーザー">
+                  <td>
                     <div class="fw-semibold">{{ s.user.name or s.user.username }}</div>
                     <div class="text-muted small">{{ s.user.username }}</div>
                   </td>
-                  <td data-label="出勤">{{ s.clock_in_at|fmt_dt }}</td>
-                  <td data-label="退勤">{{ s.clock_out_at|fmt_dt }}</td>
-                  <td data-label="実働/休憩">
+                  <td>{{ s.clock_in_at|fmt_dt }}</td>
+                  <td>{{ s.clock_out_at|fmt_dt }}</td>
+                  <td>
                     <div class="fw-semibold">{{ s.worked_seconds()|fmt_hms }}</div>
                     <div class="text-muted small">休憩 {{ s.total_break_seconds()|fmt_hms }}</div>
                   </td>
                 </tr>
-                {% else %}
-                <tr><td colspan="4" class="text-muted">表示できるシフトがありません。</td></tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
-          <p class="text-muted small mb-0 mt-2">操作が必要な場合は上部リンクから管理画面を開いてください。</p>
+          <div class="mobile-only">
+            <div class="mobile-record-list">
+              {% for s in shifts_preview %}
+              <article class="mobile-record-card">
+                <div class="mobile-record-title">
+                  <strong>{{ s.user.name or s.user.username }}</strong>
+                  <span class="text-muted small">{{ s.user.username }}</span>
+                </div>
+                <dl class="mobile-record-grid">
+                  <dt>出勤</dt>
+                  <dd>{{ s.clock_in_at|fmt_dt }}</dd>
+                  <dt>退勤</dt>
+                  <dd>{{ s.clock_out_at|fmt_dt }}</dd>
+                  <dt>実働 / 休憩</dt>
+                  <dd>{{ s.worked_seconds()|fmt_hms }} / {{ s.total_break_seconds()|fmt_hms }}</dd>
+                </dl>
+              </article>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <p class="text-muted small mb-0">表示できるシフトがありません。</p>
+          {% endif %}
         </div>
       </div>
     </div>
   </div>
-</div>
+</section>
 {% endif %}
 {% endblock %}

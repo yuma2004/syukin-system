@@ -1,22 +1,25 @@
 {% extends "layout.html" %}
+{% block title %}監査ログ | 出退勤システム{% endblock %}
 {% block content %}
-<div class="card shadow-sm">
+<header class="page-header">
+  <h1 class="page-title h3">監査ログ</h1>
+  <p class="text-muted mb-0">最新の操作履歴を上から表示します。必要に応じて絞り込みとCSV出力を行ってください。</p>
+</header>
+
+<section class="card section-card">
   <div class="card-body">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-      <div>
-        <h2 class="h5 mb-0">監査ログ</h2>
-        <p class="text-muted small mb-0">最新の操作履歴を上から表示しています。</p>
-      </div>
+      <h2 class="section-title mb-0">検索と出力</h2>
       <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ url_for('admin_audit_export', action=selected_action or None, username=selected_username or None, limit=limit) }}" class="btn btn-outline-primary">CSVエクスポート</a>
-        <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">管理画面へ戻る</a>
+        <a href="{{ url_for('audit.export_logs', action=selected_action or None, username=selected_username or None, limit=limit) }}" class="btn btn-outline-primary">CSVエクスポート</a>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">管理画面へ戻る</a>
       </div>
     </div>
 
-    <form class="row row-cols-1 row-cols-md-5 g-3 align-items-end mt-3" method="get">
+    <form class="row row-cols-1 row-cols-md-5 g-3 align-items-end mt-1" method="get">
       <div class="col">
-        <label class="form-label">アクション</label>
-        <select class="form-select" name="action">
+        <label class="form-label" for="audit-action">アクション</label>
+        <select class="form-select" id="audit-action" name="action">
           <option value="">すべて</option>
           {% for action_name in action_choices %}
           <option value="{{ action_name }}" {% if action_name == selected_action %}selected{% endif %}>{{ action_name }}</option>
@@ -24,8 +27,8 @@
         </select>
       </div>
       <div class="col">
-        <label class="form-label">ユーザーID</label>
-        <input type="text" class="form-control" name="username" value="{{ selected_username }}" list="audit-username-list" placeholder="username">
+        <label class="form-label" for="audit-username">ユーザーID</label>
+        <input type="text" class="form-control" id="audit-username" name="username" value="{{ selected_username }}" list="audit-username-list" placeholder="username">
         <datalist id="audit-username-list">
           {% for user in user_candidates %}
           <option value="{{ user.username }}">{{ user.name or user.username }}</option>
@@ -33,19 +36,20 @@
         </datalist>
       </div>
       <div class="col">
-        <label class="form-label">最大件数</label>
-        <input type="number" class="form-control" name="limit" min="10" max="500" value="{{ limit }}">
+        <label class="form-label" for="audit-limit">最大件数</label>
+        <input type="number" class="form-control" id="audit-limit" name="limit" min="10" max="500" value="{{ limit }}">
       </div>
       <div class="col">
-        <button class="btn btn-primary w-100 w-md-auto">絞り込み</button>
+        <button class="btn btn-primary w-100">絞り込み</button>
       </div>
       <div class="col">
-        <a href="{{ url_for('admin_audit') }}" class="btn btn-outline-secondary w-100 w-md-auto">リセット</a>
+        <a href="{{ url_for('audit.view_logs') }}" class="btn btn-outline-secondary w-100">リセット</a>
       </div>
     </form>
 
-    <div class="table-responsive mt-4">
-      <table class="table table-sm align-middle table-stack" aria-label="監査ログ一覧">
+    {% if log_entries %}
+    <div class="table-wrap desktop-only mt-3">
+      <table class="table table-sm align-middle mb-0" aria-label="監査ログ一覧">
         <thead class="table-light">
           <tr>
             <th scope="col">日時</th>
@@ -57,53 +61,83 @@
           </tr>
         </thead>
         <tbody>
-          {% if log_entries %}
-            {% for entry in log_entries %}
-            {% set log = entry.log %}
-            {% set metadata = entry.metadata %}
-            <tr>
-              <td data-label="日時">{{ log.created_at|fmt_dt(True) }}</td>
-              <td data-label="ユーザー">
-                {% if log.user %}
-                  <div class="fw-semibold">{{ log.user.name or log.user.username }}</div>
-                  <div class="text-muted small">{{ log.user.username }}{% if log.user.email %} ({{ log.user.email }}){% endif %}</div>
-                {% else %}
-                  <span class="text-muted small">(system)</span>
-                {% endif %}
-              </td>
-              <td data-label="アクション">
-                <span class="badge text-bg-secondary">{{ log.action }}</span>
-              </td>
-              <td data-label="対象">
-                <div>{{ log.target_type or '-' }}</div>
-                <div class="text-muted small">ID: {{ log.target_id or '-' }}</div>
-              </td>
-              <td class="small" data-label="IP / UA">
-                <div>{{ log.ip or '-' }}</div>
-                <div class="text-muted">{{ log.user_agent or '-' }}</div>
-              </td>
-              <td class="small" data-label="詳細">
-                {% if metadata %}
-                  <details>
-                    <summary class="text-decoration-underline">JSON</summary>
-                    <pre class="mb-0 small">{{ metadata | tojson(indent=2) }}</pre>
-                  </details>
-                {% else %}
-                  <span class="text-muted">-</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          {% else %}
+          {% for entry in log_entries %}
+          {% set log = entry.log %}
+          {% set metadata = entry.metadata %}
           <tr>
-            <td colspan="6" class="text-muted">該当する監査ログがありません。</td>
+            <td>{{ log.created_at|fmt_dt(True) }}</td>
+            <td>
+              {% if log.user %}
+                <div class="fw-semibold">{{ log.user.name or log.user.username }}</div>
+                <div class="text-muted small">{{ log.user.username }}{% if log.user.email %} ({{ log.user.email }}){% endif %}</div>
+              {% else %}
+                <span class="text-muted small">(system)</span>
+              {% endif %}
+            </td>
+            <td><span class="badge text-bg-secondary">{{ log.action }}</span></td>
+            <td>
+              <div>{{ log.target_type or '-' }}</div>
+              <div class="text-muted small">ID: {{ log.target_id or '-' }}</div>
+            </td>
+            <td class="small">
+              <div>{{ log.ip or '-' }}</div>
+              <div class="text-muted">{{ log.user_agent or '-' }}</div>
+            </td>
+            <td class="small">
+              {% if metadata %}
+                <details>
+                  <summary class="text-decoration-underline">JSON</summary>
+                  <pre class="summary-json small">{{ metadata | tojson(indent=2) }}</pre>
+                </details>
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
           </tr>
-          {% endif %}
+          {% endfor %}
         </tbody>
       </table>
     </div>
 
-    <p class="text-muted small mb-0">* すべての時刻は {{ LOCAL_TZ_NAME }} 表示です。署名ハッシュはDB上で確認できます。</p>
+    <div class="mobile-only mt-3">
+      <div class="mobile-record-list">
+        {% for entry in log_entries %}
+        {% set log = entry.log %}
+        {% set metadata = entry.metadata %}
+        <article class="mobile-record-card">
+          <div class="mobile-record-title">
+            <strong>{{ log.action }}</strong>
+            <span class="text-muted small">{{ log.created_at|fmt_dt(True) }}</span>
+          </div>
+          <dl class="mobile-record-grid">
+            <dt>ユーザー</dt>
+            <dd>
+              {% if log.user %}
+                {{ log.user.name or log.user.username }} ({{ log.user.username }})
+              {% else %}
+                (system)
+              {% endif %}
+            </dd>
+            <dt>対象</dt>
+            <dd>{{ log.target_type or '-' }} / ID: {{ log.target_id or '-' }}</dd>
+            <dt>IP / UA</dt>
+            <dd>{{ log.ip or '-' }} / {{ log.user_agent or '-' }}</dd>
+          </dl>
+          {% if metadata %}
+          <details class="mt-2">
+            <summary class="text-decoration-underline small">詳細JSON</summary>
+            <pre class="summary-json small mt-1">{{ metadata | tojson(indent=2) }}</pre>
+          </details>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state mt-3">該当する監査ログがありません。条件を変更して再検索してください。</div>
+    {% endif %}
+
+    <p class="text-muted small mb-0 mt-3">すべての時刻は {{ LOCAL_TZ_NAME }} 表示です。署名ハッシュはDB上で確認できます。</p>
   </div>
-</div>
+</section>
 {% endblock %}

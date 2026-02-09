@@ -1,0 +1,23 @@
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionTitle" aria-describedby="confirmActionMessage" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="confirmActionTitle">操作を確認</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmActionMessage" class="mb-2">この操作を実行しますか？</p>
+        <div class="danger-note mb-3 d-none" id="confirmActionDanger"></div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="confirmActionAcknowledge">
+          <label class="form-check-label" for="confirmActionAcknowledge">内容を確認し、実行しても問題ありません。</label>
+        </div>
+        <p class="confirm-help mb-0 mt-2">確認チェックを入れるまで実行ボタンは有効になりません。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <button type="button" class="btn btn-danger" id="confirmActionSubmit" disabled>実行する</button>
+      </div>
+    </div>
+  </div>
+</div>
