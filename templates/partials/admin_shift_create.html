@@ -1,13 +1,22 @@
-<div class="mt-4">
-  <div class="surface-subtle p-3">
-    <h3 class="h6 mb-2">手動で出退勤を追加</h3>
-    <p class="form-hint mb-3">値はすべて監査ログに記録されます。退勤時刻は未入力でも登録できます。</p>
-    <form class="row gy-3 align-items-end" method="POST" action="{{ url_for('admin.shift_create') }}">
+<details class="admin-create-card admin-disclosure" id="admin-shift-create-section">
+  <summary class="admin-disclosure-summary">
+    <div>
+      <span class="admin-disclosure-title">新規シフト作成</span>
+      <span class="admin-disclosure-sub">手動で出退勤記録を追加します（退勤は任意）</span>
+    </div>
+    <span class="material-symbols-outlined admin-disclosure-icon" aria-hidden="true">expand_more</span>
+  </summary>
+
+  <div class="admin-disclosure-body">
+    <p class="admin-create-help">値は監査ログに記録されます。退勤時刻は未入力でも登録できます。</p>
+
+    <form class="admin-create-form" method="POST" action="{{ url_for('admin.shift_create') }}">
       <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
       <input type="hidden" name="start" value="{{ start }}">
       <input type="hidden" name="end" value="{{ end }}">
       <input type="hidden" name="username" value="{{ user_username }}">
-      <div class="col-md-3">
+
+      <div class="admin-create-group">
         <label class="form-label" for="shift-create-user">ユーザー</label>
         <select id="shift-create-user" name="user_id" class="form-select" required>
           <option value="" disabled selected>選択してください</option>
@@ -16,18 +25,22 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
+
+      <div class="admin-create-group">
         <label class="form-label" for="shift-create-clock-in">出勤 ({{ LOCAL_TZ_NAME }})</label>
-        <input type="datetime-local" id="shift-create-clock-in" name="clock_in_at" class="form-control" required>
+        <input type="datetime-local" id="shift-create-clock-in" name="clock_in_at" class="form-control" required step="60">
       </div>
-      <div class="col-md-3">
+
+      <div class="admin-create-group">
         <label class="form-label" for="shift-create-clock-out">退勤 (任意)</label>
-        <input type="datetime-local" id="shift-create-clock-out" name="clock_out_at" class="form-control">
+        <input type="datetime-local" id="shift-create-clock-out" name="clock_out_at" class="form-control" step="60">
       </div>
-      <div class="col-md-3 d-grid">
-        <button type="submit" class="btn btn-outline-primary">追加</button>
+
+      <div class="admin-create-group admin-create-group--actions">
+        <button type="submit" class="btn btn-outline-primary w-100">追加</button>
       </div>
     </form>
-    <p class="text-muted small mb-0 mt-2">退勤を空にすると「出勤中」のシフトとして登録されます。</p>
+
+    <p class="admin-create-footnote mb-0">退勤を空にすると「出勤中」のシフトとして登録されます。</p>
   </div>
-</div>
+</details>

@@ -1,28 +1,34 @@
-<section class="surface-subtle p-3 mt-3">
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h2 class="h6 mb-0">検索条件</h2>
-    <p class="form-hint mb-0" id="admin-filter-help">期間とユーザーIDで一覧を絞り込みます。</p>
+<section class="admin-filter-card" aria-labelledby="admin-filter-title">
+  <div class="admin-filter-head">
+    <h2 class="admin-filter-title" id="admin-filter-title">フィルター</h2>
+    <p class="admin-filter-help" id="admin-filter-help">期間とユーザーIDで一覧を絞り込みます。</p>
   </div>
-  <form class="row row-cols-1 row-cols-md-4 g-3 align-items-end mt-1" method="get" aria-describedby="admin-filter-help">
-    <div class="col">
+
+  <form class="admin-filter-form" method="get" aria-describedby="admin-filter-help">
+    <div class="admin-filter-group">
       <label class="form-label" for="filter-start">開始日</label>
       <input type="date" class="form-control" id="filter-start" name="start" value="{{ start }}">
     </div>
-    <div class="col">
+
+    <div class="admin-filter-sep" aria-hidden="true">~</div>
+
+    <div class="admin-filter-group">
       <label class="form-label" for="filter-end">終了日</label>
       <input type="date" class="form-control" id="filter-end" name="end" value="{{ end }}">
     </div>
-    <div class="col">
-      <label class="form-label" for="filter-username">ユーザーID（任意）</label>
-      <input type="text" class="form-control" id="filter-username" name="username" value="{{ user_username }}" list="admin-username-list" placeholder="username">
+
+    <div class="admin-filter-group admin-filter-group--user">
+      <label class="form-label" for="filter-username">ユーザー検索</label>
+      <input type="text" class="form-control" id="filter-username" name="username" value="{{ user_username }}" list="admin-username-list" placeholder="名前またはID" autocomplete="off" spellcheck="false">
       <datalist id="admin-username-list">
         {% for user in user_candidates %}
         <option value="{{ user.username }}">{{ user.name or user.username }}</option>
         {% endfor %}
       </datalist>
     </div>
-    <div class="col d-flex flex-column flex-md-row gap-2">
-      <button class="btn btn-primary w-100">表示更新</button>
+
+    <div class="admin-filter-actions">
+      <button class="btn btn-primary w-100" type="submit">フィルター適用</button>
       <a class="btn btn-outline-secondary w-100" href="{{ url_for('admin.dashboard') }}">リセット</a>
     </div>
   </form>

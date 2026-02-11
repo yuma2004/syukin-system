@@ -27,6 +27,24 @@ document.addEventListener("DOMContentLoaded", () => {
     submitBtn.disabled = true;
   };
 
+  const focusInitialField = () => {
+    const initialTarget = modalEl.querySelector("[data-modal-initial-focus]");
+    if (!initialTarget) {
+      return;
+    }
+    const applyFocus = () => {
+      if (!modalEl.classList.contains("show")) {
+        return;
+      }
+      if (initialTarget.matches(":disabled")) {
+        return;
+      }
+      initialTarget.focus({ preventScroll: true });
+    };
+    window.setTimeout(applyFocus, 0);
+    window.setTimeout(applyFocus, 120);
+  };
+
   document.addEventListener("click", (event) => {
     const trigger = event.target.closest("[data-confirm-form]");
     if (!trigger) {
@@ -75,4 +93,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   modalEl.addEventListener("hidden.bs.modal", resetModal);
+  modalEl.addEventListener("shown.bs.modal", focusInitialField);
 });

@@ -1,43 +1,63 @@
-<div class="mt-4">
+<section class="admin-table-card">
   {% if shifts %}
-  <div class="table-wrap desktop-only">
-    <table class="table table-sm align-middle mb-0" aria-label="シフト一覧">
-      <thead class="table-light">
+  <div class="admin-table-wrap desktop-only">
+    <table class="table table-sm align-middle mb-0 admin-shift-table" aria-label="シフト一覧">
+      <thead>
         <tr>
           <th scope="col">ユーザー</th>
-          <th scope="col">出勤</th>
-          <th scope="col">退勤</th>
-          <th scope="col">実働 / 休憩</th>
-          <th scope="col">IP (in/out)</th>
-          <th scope="col">操作</th>
+          <th scope="col">出退勤時刻</th>
+          <th scope="col">労働 / 休憩</th>
+          <th scope="col">IPアドレス</th>
+          <th scope="col" class="text-end">操作</th>
         </tr>
       </thead>
       <tbody>
         {% for s in shifts %}
-        <tr class="{% if s.is_open %}table-warning{% endif %}">
+        <tr>
           <td>
-            <div class="fw-semibold">{{ s.user.name or s.user.username }}</div>
-            <div class="text-muted small">{{ s.user.username }}{% if s.user.email %} ({{ s.user.email }}){% endif %}</div>
+            <div class="admin-user-cell">
+              <div class="admin-user-avatar" aria-hidden="true">{{ (s.user.name or s.user.username)[:1] }}</div>
+              <div>
+                <div class="admin-user-name">{{ s.user.name or s.user.username }}</div>
+                <div class="admin-user-sub">{{ s.user.username }}</div>
+              </div>
+            </div>
           </td>
           <td>
-            <div>{{ s.clock_in_at|fmt_dt }}</div>
-            {% if s.is_open %}<span class="badge bg-warning-subtle text-warning-emphasis border">出勤中</span>{% endif %}
-          </td>
-          <td>{{ s.clock_out_at|fmt_dt }}</td>
-          <td>
-            <div class="fw-semibold">{{ s.worked_seconds()|fmt_hms }}</div>
-            <div class="text-muted small">休憩 {{ s.breaks|length }} / {{ s.total_break_seconds()|fmt_hms }}</div>
-          </td>
-          <td class="small">
-            <div>{{ s.clock_in_ip or '-' }}</div>
-            <div>{{ s.clock_out_ip or '-' }}</div>
+            <div class="admin-time-main tabular-nums">
+              {{ s.clock_in_at|fmt_dt }} - {{ s.clock_out_at|fmt_dt if s.clock_out_at else "勤務中" }}
+            </div>
+            <div class="admin-time-sub">{{ s.clock_in_at|fmt_dt }}</div>
           </td>
           <td>
-            <div class="table-actions">
-              <button type="button" class="btn btn-sm btn-outline-primary" data-shift-edit="{{ s.id }}" data-detail-url="{{ url_for('admin.shift_detail', shift_id=s.id) }}" data-action-url="{{ url_for('admin.shift_edit', shift_id=s.id) }}">
-                編集
+            <span class="admin-work-chip tabular-nums">{{ s.worked_seconds()|fmt_hms }}</span>
+            <span class="admin-break-text tabular-nums">休憩 {{ s.total_break_seconds()|fmt_hms }}</span>
+          </td>
+          <td class="tabular-nums">
+            <div class="admin-ip-cell">{{ s.clock_in_ip or '-' }}</div>
+            <div class="admin-ip-cell">{{ s.clock_out_ip or '-' }}</div>
+          </td>
+          <td class="text-end">
+            <div class="admin-row-actions">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                data-shift-edit="{{ s.id }}"
+                data-detail-url="{{ url_for('admin.shift_detail', shift_id=s.id) }}"
+                data-action-url="{{ url_for('admin.shift_edit', shift_id=s.id) }}"
+                aria-label="{{ s.user.username }} のシフトを編集"
+                title="編集"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">edit</span>
               </button>
-              <a href="{{ url_for('admin.shift_edit', shift_id=s.id) }}" class="btn btn-sm btn-outline-secondary">詳細画面</a>
+              <a
+                href="{{ url_for('admin.shift_edit', shift_id=s.id) }}"
+                class="btn btn-sm btn-outline-secondary"
+                aria-label="{{ s.user.username }} のシフト詳細を開く"
+                title="詳細"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+              </a>
               <button
                 type="button"
                 class="btn btn-sm btn-outline-danger"
@@ -45,8 +65,10 @@
                 data-confirm-title="シフトを削除"
                 data-confirm-message="この出退勤記録を削除します。元に戻せません。"
                 data-confirm-danger="対象: {{ s.user.username }} / 出勤 {{ s.clock_in_at|fmt_dt }}"
+                aria-label="{{ s.user.username }} のシフトを削除"
+                title="削除"
               >
-                削除
+                <span class="material-symbols-outlined" aria-hidden="true">delete</span>
               </button>
             </div>
             <form id="delete-shift-{{ s.id }}" method="POST" action="{{ url_for('admin.shift_delete', shift_id=s.id) }}" class="d-none">
@@ -68,25 +90,37 @@
       <article class="mobile-record-card">
         <div class="mobile-record-title">
           <strong>{{ s.user.name or s.user.username }}</strong>
-          {% if s.is_open %}<span class="badge bg-warning-subtle text-warning-emphasis border">出勤中</span>{% endif %}
         </div>
         <dl class="mobile-record-grid">
           <dt>ユーザーID</dt>
           <dd>{{ s.user.username }}</dd>
-          <dt>出勤</dt>
-          <dd>{{ s.clock_in_at|fmt_dt }}</dd>
-          <dt>退勤</dt>
-          <dd>{{ s.clock_out_at|fmt_dt }}</dd>
-          <dt>実働 / 休憩</dt>
-          <dd>{{ s.worked_seconds()|fmt_hms }} / {{ s.total_break_seconds()|fmt_hms }}</dd>
+          <dt>出退勤</dt>
+          <dd>{{ s.clock_in_at|fmt_dt }} - {{ s.clock_out_at|fmt_dt if s.clock_out_at else "勤務中" }}</dd>
+          <dt>労働 / 休憩</dt>
+          <dd class="tabular-nums">{{ s.worked_seconds()|fmt_hms }} / {{ s.total_break_seconds()|fmt_hms }}</dd>
           <dt>IP (in/out)</dt>
-          <dd>{{ s.clock_in_ip or '-' }} / {{ s.clock_out_ip or '-' }}</dd>
+          <dd class="tabular-nums">{{ s.clock_in_ip or '-' }} / {{ s.clock_out_ip or '-' }}</dd>
         </dl>
-        <div class="table-actions mt-3">
-          <button type="button" class="btn btn-sm btn-outline-primary" data-shift-edit="{{ s.id }}" data-detail-url="{{ url_for('admin.shift_detail', shift_id=s.id) }}" data-action-url="{{ url_for('admin.shift_edit', shift_id=s.id) }}">
-            編集
+        <div class="admin-row-actions mt-3">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary"
+            data-shift-edit="{{ s.id }}"
+            data-detail-url="{{ url_for('admin.shift_detail', shift_id=s.id) }}"
+            data-action-url="{{ url_for('admin.shift_edit', shift_id=s.id) }}"
+            aria-label="{{ s.user.username }} のシフトを編集"
+            title="編集"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>
           </button>
-          <a href="{{ url_for('admin.shift_edit', shift_id=s.id) }}" class="btn btn-sm btn-outline-secondary">詳細画面</a>
+          <a
+            href="{{ url_for('admin.shift_edit', shift_id=s.id) }}"
+            class="btn btn-sm btn-outline-secondary"
+            aria-label="{{ s.user.username }} のシフト詳細を開く"
+            title="詳細"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+          </a>
           <button
             type="button"
             class="btn btn-sm btn-outline-danger"
@@ -94,8 +128,10 @@
             data-confirm-title="シフトを削除"
             data-confirm-message="この出退勤記録を削除します。元に戻せません。"
             data-confirm-danger="対象: {{ s.user.username }} / 出勤 {{ s.clock_in_at|fmt_dt }}"
+            aria-label="{{ s.user.username }} のシフトを削除"
+            title="削除"
           >
-            削除
+            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
           </button>
         </div>
       </article>
@@ -105,4 +141,4 @@
   {% else %}
   <div class="empty-state">該当するシフトがありません。期間またはユーザー条件を変更してください。</div>
   {% endif %}
-</div>
+</section>

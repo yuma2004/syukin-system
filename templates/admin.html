@@ -1,30 +1,50 @@
 {% extends "layout.html" %}
-{% block title %}管理 - 出退勤記録 | 出退勤システム{% endblock %}
+{% block title %}管理者ダッシュボード | 出退勤システム{% endblock %}
+{% block body_class %} admin-dashboard-page{% endblock %}
 {% block content %}
-<header class="page-header">
-  <h1 class="page-title h3">管理 - 出退勤記録</h1>
-  <p class="text-muted mb-0">表示タイムゾーン: {{ LOCAL_TZ_NAME }}。検索・編集・エクスポートをここで行います。</p>
-</header>
+{% set summary = namespace(total_seconds=0, total_shifts=0) %}
+{% for day in daily_totals %}
+  {% set summary.total_seconds = summary.total_seconds + day.seconds %}
+  {% set summary.total_shifts = summary.total_shifts + day.count %}
+{% endfor %}
 
-<section class="card section-card">
-  <div class="card-body">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-      <h2 class="section-title mb-0">管理メニュー</h2>
-      <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-success" href="{{ url_for('admin.users') }}">ユーザー管理</a>
-        <a class="btn btn-outline-primary" href="{{ url_for('audit.view_logs') }}">監査ログ</a>
-        <a class="btn btn-outline-secondary" href="{{ url_for('admin.export_csv', start=start, end=end, username=user_username) }}">CSVエクスポート</a>
+<section class="admin-shell">
+  <header class="admin-page-header">
+    <div class="admin-page-title-wrap">
+      <div class="admin-page-title-icon">
+        <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+      </div>
+      <div>
+        <h1 class="admin-page-title text-balance">管理者ダッシュボード</h1>
+        <p class="admin-page-subtitle text-pretty">表示タイムゾーン: {{ LOCAL_TZ_NAME }}。出退勤記録の確認、修正、CSV出力を一元管理できます。</p>
       </div>
     </div>
+  </header>
 
+  <section class="admin-summary-bar" aria-label="管理サマリー">
+    <div class="admin-summary-item">
+      <p class="admin-summary-label">合計実働（表示期間）</p>
+      <p class="admin-summary-value tabular-nums">{{ summary.total_seconds|fmt_hms }}</p>
+      <p class="admin-summary-note">{{ start }} ～ {{ end }}</p>
+    </div>
+    <div class="admin-summary-divider" aria-hidden="true"></div>
+    <div class="admin-summary-item">
+      <p class="admin-summary-label">総シフト数</p>
+      <p class="admin-summary-value tabular-nums">{{ summary.total_shifts }}<span>件</span></p>
+      <p class="admin-summary-note">一致件数: {{ shifts|length }}</p>
+    </div>
+  </section>
+
+  <section class="admin-tools-stack" aria-label="フィルター・作成・集計">
     {% include "partials/admin_filters.html" %}
     {% include "partials/admin_shift_create.html" %}
     {% include "partials/admin_daily_totals.html" %}
-    {% include "partials/admin_shift_table.html" %}
+  </section>
 
-    <div class="danger-note mt-3">
-      保存はUTC、表示は {{ LOCAL_TZ_NAME }}。各操作は監査ログ（IP/UA/HMAC）に記録されます。
-    </div>
+  {% include "partials/admin_shift_table.html" %}
+
+  <div class="danger-note mt-3">
+    保存はUTC、表示は {{ LOCAL_TZ_NAME }}。各操作は監査ログ（IP/UA/HMAC）に記録されます。
   </div>
 </section>
 

@@ -1,83 +1,96 @@
-<div class="modal fade" id="shiftEditModal" tabindex="-1" aria-labelledby="shiftEditModalTitle" aria-describedby="shiftEditModalDesc" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
+<div class="modal fade shift-modal" id="shiftEditModal" tabindex="-1" aria-labelledby="shiftEditModalTitle" aria-describedby="shiftEditModalDesc" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable shift-modal-dialog">
+    <div class="modal-content shift-modal-content">
       <form method="POST" id="shiftEditForm">
-        <div class="modal-header">
-          <h5 class="modal-title" id="shiftEditModalTitle">シフト編集</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-        </div>
-        <div class="modal-body">
+        <header class="modal-header shift-modal-header">
+          <div>
+            <h2 class="modal-title shift-modal-title" id="shiftEditModalTitle">シフト編集</h2>
+            <p class="shift-modal-date">管理者による時刻修正</p>
+          </div>
+          <button type="button" class="shift-modal-close" data-bs-dismiss="modal" aria-label="閉じる">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+          </button>
+        </header>
+
+        <div class="modal-body shift-modal-body">
           <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-          <p class="form-hint mb-2" id="shiftEditModalDesc">時刻を更新すると監査ログに変更前後の値が記録されます。</p>
+          <p class="shift-modal-desc" id="shiftEditModalDesc">時刻を更新すると監査ログに変更前後の値が記録されます。</p>
           <div class="visually-hidden" id="shiftEditStatus" role="status" aria-live="polite"></div>
-          <div class="mb-3">
-            <div class="fw-semibold" id="shiftEditUser">&nbsp;</div>
-            <div class="text-muted small" id="shiftEditSummary">&nbsp;</div>
+
+          <div class="shift-modal-user">
+            <p class="shift-modal-user-name" id="shiftEditUser">&nbsp;</p>
+            <p class="shift-modal-user-sub" id="shiftEditSummary">&nbsp;</p>
           </div>
-          <div class="border rounded p-3 mb-3">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label" for="shiftEditClockIn">出勤時刻 ({{ LOCAL_TZ_NAME }})</label>
-                <div class="d-flex gap-2">
-                  <input type="datetime-local" class="form-control" id="shiftEditClockIn" name="clock_in_at" step="60" required>
-                  <button type="button" class="btn btn-outline-secondary btn-sm" data-clear-target="#shiftEditClockIn">未設定</button>
-                </div>
-                <div class="btn-group btn-group-sm flex-wrap mt-2" role="group" aria-label="出勤時刻ショートカット">
-                  <button type="button" class="btn btn-outline-secondary" data-set-now="#shiftEditClockIn">現在</button>
-                  <button type="button" class="btn btn-outline-secondary" data-adjust-target="#shiftEditClockIn" data-adjust-minutes="-15">-15分</button>
-                  <button type="button" class="btn btn-outline-secondary" data-adjust-target="#shiftEditClockIn" data-adjust-minutes="15">+15分</button>
-                  <button type="button" class="btn btn-outline-secondary" data-round-target="#shiftEditClockIn" data-round-minutes="5">5分単位に丸める</button>
-                </div>
-                <div class="form-text" id="shiftEditClockInMeta"></div>
+
+          <div class="shift-modal-time-grid">
+            <section class="shift-modal-time-card">
+              <label class="form-label shift-modal-label" for="shiftEditClockIn">出勤時刻 ({{ LOCAL_TZ_NAME }})</label>
+              <div class="shift-modal-input-wrap">
+                <input type="datetime-local" class="form-control shift-modal-input" id="shiftEditClockIn" name="clock_in_at" step="60" required data-modal-initial-focus>
+                <span class="material-symbols-outlined shift-modal-input-icon" aria-hidden="true">schedule</span>
               </div>
-              <div class="col-md-6">
-                <label class="form-label" for="shiftEditClockOut">退勤時刻 ({{ LOCAL_TZ_NAME }})</label>
-                <div class="d-flex gap-2">
-                  <input type="datetime-local" class="form-control" id="shiftEditClockOut" name="clock_out_at" step="60">
-                  <button type="button" class="btn btn-outline-secondary btn-sm" data-clear-target="#shiftEditClockOut">未設定</button>
-                </div>
-                <div class="btn-group btn-group-sm flex-wrap mt-2" role="group" aria-label="退勤時刻ショートカット">
-                  <button type="button" class="btn btn-outline-secondary" data-set-now="#shiftEditClockOut">現在</button>
-                  <button type="button" class="btn btn-outline-secondary" data-adjust-target="#shiftEditClockOut" data-adjust-minutes="-15">-15分</button>
-                  <button type="button" class="btn btn-outline-secondary" data-adjust-target="#shiftEditClockOut" data-adjust-minutes="15">+15分</button>
-                  <button type="button" class="btn btn-outline-secondary" data-copy-from="#shiftEditClockIn" data-copy-target="#shiftEditClockOut">出勤と同じ</button>
-                  <button type="button" class="btn btn-outline-secondary" data-round-target="#shiftEditClockOut" data-round-minutes="5">5分単位に丸める</button>
-                </div>
-                <div class="form-text" id="shiftEditClockOutMeta"></div>
+              <div class="shift-modal-shortcuts" role="group" aria-label="出勤時刻ショートカット">
+                <button type="button" data-set-now="#shiftEditClockIn">現在</button>
+                <button type="button" data-adjust-target="#shiftEditClockIn" data-adjust-minutes="-15">-15分</button>
+                <button type="button" data-adjust-target="#shiftEditClockIn" data-adjust-minutes="15">+15分</button>
+                <button type="button" data-round-target="#shiftEditClockIn" data-round-minutes="5">5分丸め</button>
+                <button type="button" data-clear-target="#shiftEditClockIn">クリア</button>
               </div>
+              <p class="shift-modal-meta tabular-nums" id="shiftEditClockInMeta"></p>
+            </section>
+
+            <div class="shift-modal-arrow" aria-hidden="true">
+              <span class="material-symbols-outlined">arrow_forward</span>
             </div>
+
+            <section class="shift-modal-time-card">
+              <label class="form-label shift-modal-label" for="shiftEditClockOut">退勤時刻 ({{ LOCAL_TZ_NAME }})</label>
+              <div class="shift-modal-input-wrap">
+                <input type="datetime-local" class="form-control shift-modal-input" id="shiftEditClockOut" name="clock_out_at" step="60">
+                <span class="material-symbols-outlined shift-modal-input-icon" aria-hidden="true">schedule</span>
+              </div>
+              <div class="shift-modal-shortcuts" role="group" aria-label="退勤時刻ショートカット">
+                <button type="button" data-set-now="#shiftEditClockOut">現在</button>
+                <button type="button" data-adjust-target="#shiftEditClockOut" data-adjust-minutes="-15">-15分</button>
+                <button type="button" data-adjust-target="#shiftEditClockOut" data-adjust-minutes="15">+15分</button>
+                <button type="button" data-copy-from="#shiftEditClockIn" data-copy-target="#shiftEditClockOut">出勤をコピー</button>
+                <button type="button" data-round-target="#shiftEditClockOut" data-round-minutes="5">5分丸め</button>
+                <button type="button" data-clear-target="#shiftEditClockOut">クリア</button>
+              </div>
+              <p class="shift-modal-meta tabular-nums" id="shiftEditClockOutMeta"></p>
+            </section>
           </div>
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
-              <div class="p-3 rounded bg-body-tertiary h-100">
-                <div class="text-muted small">実働時間</div>
-                <div class="fs-5" id="shiftEditWorked">--:--</div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="p-3 rounded bg-body-tertiary h-100">
-                <div class="text-muted small">休憩合計</div>
-                <div class="fs-5" id="shiftEditBreaks">--:--</div>
-                <div class="text-muted small" id="shiftEditBreakCount"></div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="p-3 rounded bg-body-tertiary h-100">
-                <div class="text-muted small">IP</div>
-                <div class="small" id="shiftEditIp"></div>
-              </div>
-            </div>
-          </div>
-          <div class="alert alert-danger d-none" id="shiftEditError" role="alert" aria-live="assertive"></div>
-          <div class="text-center py-3 d-none" data-loading role="status" aria-live="polite">
+
+          <section class="shift-modal-stats" aria-label="集計">
+            <article class="shift-modal-stat">
+              <p>労働時間</p>
+              <p class="tabular-nums" id="shiftEditWorked">--:--</p>
+            </article>
+            <article class="shift-modal-stat">
+              <p>休憩</p>
+              <p class="tabular-nums" id="shiftEditBreaks">--:--</p>
+              <p class="shift-modal-stat-sub" id="shiftEditBreakCount"></p>
+            </article>
+            <article class="shift-modal-stat">
+              <p>IP</p>
+              <p class="shift-modal-ip tabular-nums" id="shiftEditIp"></p>
+            </article>
+          </section>
+
+          <div class="alert alert-danger d-none shift-modal-error" id="shiftEditError" role="alert" aria-live="assertive"></div>
+          <div class="shift-modal-loading text-center py-3 d-none" data-loading role="status" aria-live="polite">
             <div class="spinner-border" role="status" aria-hidden="true"></div>
-            <div class="small text-muted mt-2">シフト情報を読み込み中...</div>
+            <div class="small mt-2">シフト情報を読み込み中…</div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
-          <button type="submit" class="btn btn-primary">更新</button>
-        </div>
+
+        <footer class="modal-footer shift-modal-footer">
+          <a href="#" class="shift-modal-link" id="shiftEditDetailLink">詳細画面で編集</a>
+          <div class="shift-modal-footer-actions">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
+            <button type="submit" class="btn btn-primary">保存する</button>
+          </div>
+        </footer>
       </form>
     </div>
   </div>

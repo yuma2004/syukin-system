@@ -1,0 +1,489 @@
+﻿/* Dashboard page styles */
+
+.dashboard-page .container.py-3.py-lg-4 {
+  max-width: 1200px;
+}
+
+.dash-shell {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.dash-welcome {
+  margin-bottom: 1.55rem;
+}
+
+.dash-welcome-title {
+  margin: 0;
+  font-size: 1.72rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dash-welcome-sub {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: #5f6b7a;
+}
+
+.dash-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+
+.dash-main-column,
+.dash-side-column {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.dash-card {
+  border: 1px solid #dbe4ee;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  box-shadow: 0 0.2rem 0.9rem rgba(15, 23, 42, 0.06);
+  padding: 1rem;
+}
+
+.dash-clock-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+.dash-clock-date {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #7b8695;
+}
+
+.dash-clock-time {
+  margin: 0;
+  font-size: clamp(2rem, 7vw, 3rem);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dash-status-pill {
+  margin: 0.35rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  border-radius: 999px;
+  padding: 0.24rem 0.66rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.dash-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.dash-status-pill--active {
+  background: #eefaf2;
+  color: #13844c;
+  border-color: #bfe6cc;
+}
+
+.dash-status-pill--break {
+  background: #fff8e8;
+  color: #b35600;
+  border-color: #f0dc9d;
+}
+
+.dash-status-pill--idle {
+  background: #f7f8fa;
+  color: #637083;
+  border-color: #dde3ea;
+}
+
+.dash-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dash-action-btn {
+  border: 1px solid #d7dfeb;
+  border-radius: 0.8rem;
+  background: #f9fbfd;
+  min-height: 5.4rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: #1f2937;
+  transition: background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.dash-action-btn .material-symbols-outlined {
+  font-size: 1.8rem;
+}
+
+.dash-action-btn--clock-in .material-symbols-outlined {
+  color: #207fdf;
+}
+
+.dash-action-btn--break-start .material-symbols-outlined {
+  color: #d97706;
+}
+
+.dash-action-btn--break-end .material-symbols-outlined {
+  color: #b45309;
+}
+
+.dash-action-btn--clock-out .material-symbols-outlined {
+  color: #dc2626;
+}
+
+.dash-action-btn:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.dash-action-btn--clock-in:hover:not(:disabled) {
+  background: #207fdf;
+  border-color: #207fdf;
+}
+
+.dash-action-btn--break-start:hover:not(:disabled) {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+.dash-action-btn--break-end:hover:not(:disabled) {
+  background: #b45309;
+  border-color: #b45309;
+}
+
+.dash-action-btn--clock-out:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.dash-action-btn:hover:not(:disabled) .material-symbols-outlined {
+  color: #ffffff;
+}
+
+.dash-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dash-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.dash-card-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dash-card-title .material-symbols-outlined {
+  font-size: 1.08rem;
+  color: #8290a3;
+}
+
+.dash-card-meta {
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.dash-table-wrap {
+  border: 1px solid #e3e8ee;
+  border-radius: 0.7rem;
+  overflow: hidden;
+}
+
+.dash-history-table thead th {
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+.dash-history-table tbody td {
+  font-size: 0.84rem;
+  padding-top: 0.56rem;
+  padding-bottom: 0.56rem;
+}
+
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.14rem 0.54rem;
+  font-size: 0.69rem;
+  font-weight: 700;
+}
+
+.dash-chip--active {
+  background: #e8f4ff;
+  color: #1d4ed8;
+}
+
+.dash-chip--break {
+  background: #fff4df;
+  color: #b45309;
+}
+
+.dash-chip--done {
+  background: #eceff3;
+  color: #475569;
+}
+
+.dash-row-main,
+.dash-row-sub {
+  display: block;
+}
+
+.dash-row-main {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.dash-row-sub {
+  margin-top: 0.06rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.dash-widget-list {
+  margin: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.dash-widget-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.dash-widget-row dt {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.79rem;
+}
+
+.dash-widget-row dd {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.dash-side-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.dash-side-section {
+  padding: 1rem;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+.dash-side-title {
+  margin: 0 0 0.85rem;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dash-side-disclosure {
+  border-bottom: 1px solid #e3e8ee;
+}
+
+.dash-side-disclosure:last-of-type {
+  border-bottom: 0;
+}
+
+.dash-side-summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dash-side-summary::-webkit-details-marker {
+  display: none;
+}
+
+.dash-side-summary .material-symbols-outlined {
+  flex: none;
+  color: #94a3b8;
+  font-size: 1.2rem;
+}
+
+.dash-side-disclosure[open] .dash-side-summary .material-symbols-outlined {
+  transform: rotate(180deg);
+}
+
+.dash-side-body {
+  padding: 0 1rem 1rem;
+}
+
+.dash-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.dash-admin-stat {
+  border: 1px solid #e3e8ee;
+  border-radius: 0.65rem;
+  padding: 0.55rem;
+  background: #f8fafc;
+}
+
+.dash-admin-label {
+  margin: 0;
+  font-size: 0.66rem;
+  color: #64748b;
+}
+
+.dash-admin-value {
+  margin: 0.2rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dash-admin-value span {
+  margin-left: 0.18rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.dash-admin-link {
+  margin-top: 0.7rem;
+  border: 1px solid #d5dde8;
+  border-radius: 0.65rem;
+  padding: 0.42rem 0.5rem;
+  display: block;
+  text-align: center;
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: #ffffff;
+}
+
+.dash-admin-link:hover {
+  color: #137fec;
+  border-color: #137fec;
+}
+
+.dash-progress-block {
+  margin-bottom: 0.78rem;
+}
+
+.dash-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.77rem;
+  color: #64748b;
+}
+
+.dash-progress-head strong {
+  color: #1f2937;
+  font-size: 0.82rem;
+}
+
+.dash-progress-track {
+  margin-top: 0.26rem;
+  width: 100%;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: #e5eaf0;
+  overflow: hidden;
+}
+
+.dash-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.dash-progress-fill--primary {
+  background: #207fdf;
+}
+
+.dash-progress-fill--warn {
+  background: #f59e0b;
+}
+
+.dash-month-total {
+  margin-bottom: 0;
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.dash-month-total strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+
+@media (max-width: 767.98px) {
+  .dash-shell {
+    max-width: 100%;
+  }
+
+  .dash-welcome-title {
+    font-size: 1.35rem;
+  }
+
+  .dash-card {
+    padding: 0.9rem;
+  }
+
+  .dash-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-admin-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .dash-layout {
+    grid-template-columns: 1fr;
+  }
+}

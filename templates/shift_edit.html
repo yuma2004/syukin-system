@@ -1,157 +1,234 @@
 {% extends "layout.html" %}
 {% block title %}シフト詳細編集 | 出退勤システム{% endblock %}
+{% block body_class %} shift-edit-page{% endblock %}
 {% block content %}
-<header class="page-header">
-  <h1 class="page-title h3">出退勤データの編集</h1>
-  <p class="text-muted mb-0">編集内容は監査ログに記録され、変更前後の値が保持されます。</p>
-</header>
+<section class="shift-edit-shell">
+  <nav class="shift-edit-breadcrumbs" aria-label="パンくずリスト">
+    <a href="{{ url_for('admin.dashboard') }}">管理者ダッシュボード</a>
+    <span>/</span>
+    <a href="{{ url_for('admin.dashboard') }}">シフト管理</a>
+    <span>/</span>
+    <strong>シフト #{{ shift.id }}</strong>
+  </nav>
 
-<section class="card section-card">
-  <div class="card-body">
-    <form method="POST" class="mt-1">
-      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-      <input type="hidden" name="action" value="update_shift">
+  <header class="shift-edit-header">
+    <div>
+      <h1 class="shift-edit-title text-balance">シフト詳細編集</h1>
+      <p class="shift-edit-subtitle text-pretty">出退勤記録・休憩記録・監査情報を一画面で編集できます。</p>
+    </div>
+    <div class="shift-edit-header-actions">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">キャンセル</a>
+      <button type="submit" class="btn btn-primary" form="shift-update-form">
+        <span class="material-symbols-outlined" aria-hidden="true">save</span>
+        <span>シフトを更新</span>
+      </button>
+    </div>
+  </header>
 
-      <div class="mb-3">
-        <label class="form-label" for="shift-user">ユーザー</label>
-        <input type="text" id="shift-user" class="form-control" value="{{ shift.user.name }} ({{ shift.user.email }})" disabled>
-      </div>
+  <div class="shift-edit-grid">
+    <section class="shift-edit-main">
+      <article class="shift-edit-panel">
+        <header class="shift-edit-panel-head">
+          <h2 class="shift-edit-panel-title">
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            <span>出退勤時刻</span>
+          </h2>
+          <span class="shift-edit-duration tabular-nums">実働 {{ shift.worked_seconds()|fmt_hms }}</span>
+        </header>
 
-      <div class="mb-3">
-        <label class="form-label" for="edit-clock-in">出勤時刻 ({{ LOCAL_TZ_NAME }})</label>
-        <input type="datetime-local" id="edit-clock-in" class="form-control" name="clock_in_at" value="{{ clock_in_form }}" step="60">
-        <small class="form-text text-muted">
-          {% if shift.clock_in_at %}
-          UTC: {{ shift.clock_in_at.isoformat() }}<br>
-          IP: {{ shift.clock_in_ip or '-' }} | UA: {{ (shift.clock_in_ua or '-')[:50] }}
-          {% else %}
-          未設定
-          {% endif %}
-        </small>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label" for="edit-clock-out">退勤時刻 ({{ LOCAL_TZ_NAME }})</label>
-        <input type="datetime-local" id="edit-clock-out" class="form-control" name="clock_out_at" value="{{ clock_out_form }}" step="60">
-        <small class="form-text text-muted">
-          {% if shift.clock_out_at %}
-          UTC: {{ shift.clock_out_at.isoformat() }}<br>
-          IP: {{ shift.clock_out_ip or '-' }} | UA: {{ (shift.clock_out_ua or '-')[:50] }}
-          {% else %}
-          未設定（出勤中の可能性があります）
-          {% endif %}
-        </small>
-      </div>
-
-      <div class="metrics-grid mb-3">
-        <div class="metric-card">
-          <div class="metric-label">現在の実働時間</div>
-          <div class="metric-value">{{ shift.worked_seconds()|fmt_hms }}</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">休憩回数</div>
-          <div class="metric-value">{{ shift.breaks|length }}回</div>
-        </div>
-      </div>
-
-      <div class="d-flex gap-2 flex-wrap">
-        <button type="submit" class="btn btn-primary">更新</button>
-        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">キャンセル</a>
-      </div>
-    </form>
-
-    <hr class="my-4">
-
-    <div class="mt-4">
-      <h2 class="h6 mb-2">休憩管理</h2>
-      <p class="text-muted small mb-3">休憩の追加・編集・削除ができます。リセット操作は取り消せません。</p>
-
-      <div class="surface-subtle p-3 mb-4">
-        <form method="POST" class="row gy-2 gx-3 align-items-end">
+        <form id="shift-update-form" method="POST" class="shift-edit-panel-body shift-edit-form">
           <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-          <input type="hidden" name="action" value="break_add">
-          <div class="col-md-4">
-            <label class="form-label mb-1" for="break-add-start">開始 ({{ LOCAL_TZ_NAME }})</label>
-            <input type="datetime-local" id="break-add-start" name="start_at" class="form-control" required>
+          <input type="hidden" name="action" value="update_shift">
+
+          <div class="shift-edit-user">
+            <p class="shift-edit-user-name">{{ shift.user.name or shift.user.username }}</p>
+            <p class="shift-edit-user-sub">ID: {{ shift.user.username }} / {{ shift.user.email or "-" }}</p>
           </div>
-          <div class="col-md-4">
-            <label class="form-label mb-1" for="break-add-end">終了 (任意)</label>
-            <input type="datetime-local" id="break-add-end" name="end_at" class="form-control">
-          </div>
-          <div class="col-md-4">
-            <button type="submit" class="btn btn-outline-primary w-100">休憩を追加</button>
+
+          <div class="shift-edit-time-grid">
+            <div class="shift-edit-field">
+              <div class="shift-edit-field-head">
+                <label for="edit-clock-in">出勤時刻 ({{ LOCAL_TZ_NAME }})</label>
+                <div class="shift-edit-shortcuts" role="group" aria-label="出勤時刻ショートカット">
+                  <button type="button" data-page-adjust-target="#edit-clock-in" data-page-adjust-minutes="-15">-15m</button>
+                  <button type="button" data-page-adjust-target="#edit-clock-in" data-page-adjust-minutes="15">+15m</button>
+                  <button type="button" data-page-set-now="#edit-clock-in">現在</button>
+                </div>
+              </div>
+              <input type="datetime-local" id="edit-clock-in" class="form-control" name="clock_in_at" value="{{ clock_in_form }}" step="60" required>
+              <p class="shift-edit-meta tabular-nums">
+                {% if shift.clock_in_at %}
+                UTC: {{ shift.clock_in_at.isoformat() }} / IP: {{ shift.clock_in_ip or '-' }}
+                {% else %}
+                未設定
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="shift-edit-field">
+              <div class="shift-edit-field-head">
+                <label for="edit-clock-out">退勤時刻 ({{ LOCAL_TZ_NAME }})</label>
+                <div class="shift-edit-shortcuts" role="group" aria-label="退勤時刻ショートカット">
+                  <button type="button" data-page-adjust-target="#edit-clock-out" data-page-adjust-minutes="-15">-15m</button>
+                  <button type="button" data-page-adjust-target="#edit-clock-out" data-page-adjust-minutes="15">+15m</button>
+                  <button type="button" data-page-set-now="#edit-clock-out">現在</button>
+                </div>
+              </div>
+              <input type="datetime-local" id="edit-clock-out" class="form-control" name="clock_out_at" value="{{ clock_out_form }}" step="60">
+              <p class="shift-edit-meta tabular-nums">
+                {% if shift.clock_out_at %}
+                UTC: {{ shift.clock_out_at.isoformat() }} / IP: {{ shift.clock_out_ip or '-' }}
+                {% else %}
+                未設定（勤務中の可能性があります）
+                {% endif %}
+              </p>
+            </div>
           </div>
         </form>
-        <form id="break-reset-form" method="POST" class="mt-3">
-          <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-          <input type="hidden" name="action" value="break_reset">
-          <button
-            type="button"
-            class="btn btn-outline-danger w-100"
-            data-confirm-form="break-reset-form"
-            data-confirm-title="休憩をリセット"
-            data-confirm-message="このシフトの休憩をすべて削除します。元に戻せません。"
-            data-confirm-danger="対象シフトID: {{ shift.id }}"
-          >
-            休憩をリセット
-          </button>
-        </form>
-      </div>
+      </article>
 
-      {% if break_entries %}
-      <div class="mobile-record-list mb-4">
-        {% for br in break_entries %}
-        <article class="mobile-record-card">
-          <form method="POST" class="row gy-2 gx-3 align-items-end">
+      <article class="shift-edit-panel">
+        <header class="shift-edit-panel-head">
+          <h2 class="shift-edit-panel-title">
+            <span class="material-symbols-outlined" aria-hidden="true">coffee</span>
+            <span>休憩管理</span>
+          </h2>
+          <form id="break-reset-form" method="POST">
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-            <input type="hidden" name="action" value="break_update">
-            <input type="hidden" name="break_id" value="{{ br.id }}">
-            <div class="col-md-4">
-              <label class="form-label mb-1" for="break-start-{{ br.id }}">開始 ({{ LOCAL_TZ_NAME }})</label>
-              <input type="datetime-local" id="break-start-{{ br.id }}" name="start_at" class="form-control" value="{{ br.start_form }}" required>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label mb-1" for="break-end-{{ br.id }}">終了 (任意)</label>
-              <input type="datetime-local" id="break-end-{{ br.id }}" name="end_at" class="form-control" value="{{ br.end_form }}">
-              {% if br.is_open %}<small class="text-danger">進行中</small>{% endif %}
-            </div>
-            <div class="col-md-4">
-              <button type="submit" class="btn btn-primary w-100">更新</button>
-            </div>
+            <input type="hidden" name="action" value="break_reset">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-confirm-form="break-reset-form"
+              data-confirm-title="休憩をリセット"
+              data-confirm-message="このシフトの休憩をすべて削除します。元に戻せません。"
+              data-confirm-danger="対象シフトID: {{ shift.id }}"
+            >
+              リセット
+            </button>
           </form>
-          <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
-            <small class="text-muted">UTC: {{ br.start_utc or '-' }} ～ {{ br.end_utc or '-' }}</small>
-            <form id="break-delete-{{ br.id }}" method="POST">
-              <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-              <input type="hidden" name="action" value="break_delete">
-              <input type="hidden" name="break_id" value="{{ br.id }}">
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                data-confirm-form="break-delete-{{ br.id }}"
-                data-confirm-title="休憩を削除"
-                data-confirm-message="この休憩データを削除します。元に戻せません。"
-                data-confirm-danger="休憩ID: {{ br.id }}"
-              >
-                削除
-              </button>
-            </form>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="empty-state mb-3">登録されている休憩はありません。必要に応じて追加してください。</div>
-      {% endif %}
-    </div>
+        </header>
 
-    <div class="mt-4">
-      <h2 class="h6">編集履歴</h2>
-      <p class="text-muted small mb-0">
-        編集操作はすべて監査ログ（audit_logs）に記録されます。<br>
-        管理画面の監査ログで変更履歴を確認できます。
-      </p>
-    </div>
+        <div class="shift-edit-panel-body">
+          <form method="POST" class="shift-break-add-form">
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+            <input type="hidden" name="action" value="break_add">
+            <div>
+              <label class="form-label" for="break-add-start">開始時刻 ({{ LOCAL_TZ_NAME }})</label>
+              <input type="datetime-local" id="break-add-start" name="start_at" class="form-control" required>
+            </div>
+            <div>
+              <label class="form-label" for="break-add-end">終了時刻 (任意)</label>
+              <input type="datetime-local" id="break-add-end" name="end_at" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <span class="material-symbols-outlined" aria-hidden="true">add</span>
+              <span>追加</span>
+            </button>
+          </form>
+
+          {% if break_entries %}
+          <div class="shift-break-list" aria-label="休憩一覧">
+            {% for br in break_entries %}
+            <article class="shift-break-item">
+              <form method="POST" class="shift-break-item-form">
+                <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                <input type="hidden" name="action" value="break_update">
+                <input type="hidden" name="break_id" value="{{ br.id }}">
+                <div class="shift-break-item-fields">
+                  <div>
+                    <label class="form-label" for="break-start-{{ br.id }}">開始</label>
+                    <input type="datetime-local" id="break-start-{{ br.id }}" name="start_at" class="form-control" value="{{ br.start_form }}" required>
+                  </div>
+                  <div>
+                    <label class="form-label" for="break-end-{{ br.id }}">終了</label>
+                    <input type="datetime-local" id="break-end-{{ br.id }}" name="end_at" class="form-control" value="{{ br.end_form }}">
+                    {% if br.is_open %}
+                    <p class="shift-break-open">進行中</p>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="shift-break-item-actions">
+                  <button type="submit" class="btn btn-outline-primary btn-sm">保存</button>
+                </div>
+              </form>
+              <footer class="shift-break-item-foot">
+                <p class="tabular-nums">UTC: {{ br.start_utc or '-' }} ～ {{ br.end_utc or '-' }}</p>
+                <form id="break-delete-{{ br.id }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                  <input type="hidden" name="action" value="break_delete">
+                  <input type="hidden" name="break_id" value="{{ br.id }}">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-confirm-form="break-delete-{{ br.id }}"
+                    data-confirm-title="休憩を削除"
+                    data-confirm-message="この休憩データを削除します。元に戻せません。"
+                    data-confirm-danger="休憩ID: {{ br.id }}"
+                  >
+                    削除
+                  </button>
+                </form>
+              </footer>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">登録されている休憩はありません。必要に応じて追加してください。</div>
+          {% endif %}
+        </div>
+      </article>
+    </section>
+
+    <aside class="shift-edit-side">
+      <article class="shift-edit-panel shift-audit-panel">
+        <header class="shift-edit-panel-head">
+          <h2 class="shift-edit-panel-title">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <span>監査情報</span>
+          </h2>
+        </header>
+        <div class="shift-edit-panel-body">
+          <section class="shift-audit-block">
+            <h3>対象ユーザー</h3>
+            <p class="shift-audit-user">{{ shift.user.name or shift.user.username }}</p>
+            <p class="shift-audit-sub">ID: {{ shift.user.username }} / {{ shift.user.email or "-" }}</p>
+          </section>
+
+          <details class="shift-audit-block shift-audit-disclosure">
+            <summary class="shift-audit-summary">
+              <span>UTCタイムスタンプ</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </summary>
+            <dl class="shift-audit-list tabular-nums">
+              <dt>In</dt>
+              <dd>{{ shift.clock_in_at.isoformat() if shift.clock_in_at else "-" }}</dd>
+              <dt>Out</dt>
+              <dd>{{ shift.clock_out_at.isoformat() if shift.clock_out_at else "-" }}</dd>
+            </dl>
+          </details>
+
+          <details class="shift-audit-block shift-audit-disclosure">
+            <summary class="shift-audit-summary">
+              <span>端末情報</span>
+              <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+            </summary>
+            <dl class="shift-audit-list tabular-nums">
+              <dt>Clock In IP</dt>
+              <dd>{{ shift.clock_in_ip or "-" }}</dd>
+              <dt>Clock Out IP</dt>
+              <dd>{{ shift.clock_out_ip or "-" }}</dd>
+            </dl>
+            <p class="shift-audit-ua"><strong>UA:</strong> {{ shift.clock_in_ua or shift.clock_out_ua or "-" }}</p>
+          </details>
+
+          <p class="shift-audit-note">
+            <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+            <span>編集操作は監査ログ（IP/UA/署名）に保存されます。</span>
+          </p>
+        </div>
+      </article>
+    </aside>
   </div>
 </section>
 
@@ -160,4 +237,50 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/admin_confirm_modal.js') }}"></script>
+<script>
+  (() => {
+    const pad2 = (num) => String(num).padStart(2, "0");
+
+    const formatForInput = (dateObj) => {
+      if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) {
+        return "";
+      }
+      return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}T${pad2(dateObj.getHours())}:${pad2(dateObj.getMinutes())}`;
+    };
+
+    const parseInput = (value) => {
+      if (!value) {
+        return null;
+      }
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    document.querySelectorAll("[data-page-set-now]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = document.querySelector(button.getAttribute("data-page-set-now"));
+        if (!input) {
+          return;
+        }
+        input.value = formatForInput(new Date());
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+
+    document.querySelectorAll("[data-page-adjust-minutes]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const selector = button.getAttribute("data-page-adjust-target");
+        const input = document.querySelector(selector);
+        const delta = Number(button.getAttribute("data-page-adjust-minutes"));
+        if (!input || Number.isNaN(delta)) {
+          return;
+        }
+        const base = parseInput(input.value) || new Date();
+        base.setMinutes(base.getMinutes() + delta);
+        input.value = formatForInput(base);
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+  })();
+</script>
 {% endblock %}

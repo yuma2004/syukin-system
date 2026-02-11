@@ -28,6 +28,24 @@ document.addEventListener("DOMContentLoaded", () => {
     title.textContent = "ユーザー編集";
   };
 
+  const focusInitialField = () => {
+    const initialTarget = modalEl.querySelector("[data-modal-initial-focus]");
+    if (!initialTarget) {
+      return;
+    }
+    const applyFocus = () => {
+      if (!modalEl.classList.contains("show")) {
+        return;
+      }
+      if (initialTarget.matches(":disabled")) {
+        return;
+      }
+      initialTarget.focus({ preventScroll: true });
+    };
+    window.setTimeout(applyFocus, 0);
+    window.setTimeout(applyFocus, 120);
+  };
+
   document.querySelectorAll("[data-user-edit]").forEach((button) => {
     button.addEventListener("click", () => {
       const { userId, userUsername, userName, userEmail, userRole } = button.dataset;
@@ -44,4 +62,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   modalEl.addEventListener("hidden.bs.modal", resetForm);
+  modalEl.addEventListener("shown.bs.modal", focusInitialField);
 });

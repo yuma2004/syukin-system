@@ -1,211 +1,249 @@
 {% extends "layout.html" %}
 {% block title %}ユーザー管理 | 出退勤システム{% endblock %}
+{% block body_class %} admin-users-page{% endblock %}
 {% block content %}
-<header class="page-header">
-  <h1 class="page-title h3">ユーザー管理</h1>
-  <p class="text-muted mb-0">ユーザーの作成・更新・削除を行います。変更内容は監査ログに記録されます。</p>
-</header>
-
-<section class="card section-card mb-3">
-  <div class="card-body">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-      <h2 class="section-title mb-0">新規ユーザー作成</h2>
-      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.dashboard') }}">出退勤記録に戻る</a>
+<section class="user-admin-shell">
+  <header class="user-admin-header">
+    <div>
+      <h1 class="user-admin-title text-balance">ユーザー管理</h1>
+      <p class="user-admin-subtitle text-pretty">システムを利用するユーザーの登録・編集・削除を行います。</p>
     </div>
+  </header>
 
-    <form method="post" class="row g-3">
-      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-      <input type="hidden" name="action" value="create">
-      <div class="col-md-3">
-        <label class="form-label" for="new-username">ユーザーID <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="new-username" name="username" required>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label" for="new-password">パスワード <span class="text-danger">*</span></label>
-        <input type="password" class="form-control" id="new-password" name="password" required>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label" for="new-name">氏名</label>
-        <input type="text" class="form-control" id="new-name" name="name">
-      </div>
-      <div class="col-md-2">
-        <label class="form-label" for="new-email">メール</label>
-        <input type="email" class="form-control" id="new-email" name="email">
-      </div>
-      <div class="col-md-2">
-        <label class="form-label" for="new-role">権限</label>
-        <select class="form-select" id="new-role" name="role">
-          <option value="user">一般ユーザー</option>
-          <option value="admin">管理者</option>
-        </select>
-      </div>
-      <div class="col-12">
-        <button type="submit" class="btn btn-primary">作成</button>
-      </div>
-    </form>
-  </div>
-</section>
+  <details class="user-admin-card user-admin-card--disclosure" id="user-create-panel">
+    <summary class="user-admin-card-head user-admin-card-head--summary">
+      <h2 class="user-admin-card-title">
+        <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+        <span>新規ユーザー作成</span>
+      </h2>
+      <span class="material-symbols-outlined user-admin-disclosure-icon" aria-hidden="true">expand_more</span>
+    </summary>
+    <div class="user-admin-card-body user-admin-card-body--disclosure">
+      <form method="post" class="user-create-form">
+        <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+        <input type="hidden" name="action" value="create">
 
-<section class="card section-card">
-  <div class="card-body">
-    <h2 class="section-title">ユーザー一覧</h2>
+        <div class="user-create-group">
+          <label class="form-label" for="new-name">氏名</label>
+          <input type="text" class="form-control" id="new-name" name="name" placeholder="山田 太郎" autocomplete="name">
+        </div>
+        <div class="user-create-group">
+          <label class="form-label" for="new-username">ユーザー名 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="new-username" name="username" placeholder="taro_y" required autocomplete="username" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="user-create-group">
+          <label class="form-label" for="new-email">メールアドレス</label>
+          <input type="email" class="form-control" id="new-email" name="email" placeholder="taro@example.com" autocomplete="email" inputmode="email" spellcheck="false">
+        </div>
+        <div class="user-create-group">
+          <label class="form-label" for="new-role">権限</label>
+          <select class="form-select" id="new-role" name="role">
+            <option value="user">一般ユーザー</option>
+            <option value="admin">管理者</option>
+          </select>
+        </div>
+        <div class="user-create-group user-create-group--full">
+          <label class="form-label" for="new-password">初期パスワード <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" id="new-password" name="password" placeholder="8文字以上を推奨" required autocomplete="new-password" minlength="8">
+        </div>
+        <div class="user-create-actions user-create-group--full">
+          <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+            <span>作成</span>
+          </button>
+        </div>
+      </form>
+      <p class="user-create-footnote">作成・更新・削除は監査ログに記録されます。</p>
+    </div>
+  </details>
 
-    {% if users %}
-    <div class="table-wrap desktop-only">
-      <table class="table table-sm align-middle mb-0" aria-label="ユーザー一覧">
-        <thead class="table-light">
-          <tr>
-            <th scope="col">ユーザーID</th>
-            <th scope="col">氏名</th>
-            <th scope="col">メール</th>
-            <th scope="col">権限</th>
-            <th scope="col">最終ログイン</th>
-            <th scope="col">作成日時</th>
-            <th scope="col">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr>
-            <td class="fw-semibold">{{ user.username }}</td>
-            <td>{{ user.name or '-' }}</td>
-            <td>{{ user.email or '-' }}</td>
-            <td>
-              {% if user.role == 'admin' %}
-                <span class="badge bg-danger">管理者</span>
-              {% else %}
-                <span class="badge bg-secondary">一般</span>
-              {% endif %}
-            </td>
-            <td>{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</td>
-            <td>{{ user.created_at|fmt_dt }}</td>
-            <td>
-              <div class="table-actions">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-primary"
-                  data-user-edit
-                  data-user-id="{{ user.id }}"
-                  data-user-username="{{ user.username|e }}"
-                  data-user-name="{{ (user.name or '')|e }}"
-                  data-user-email="{{ (user.email or '')|e }}"
-                  data-user-role="{{ user.role }}"
-                >
-                  編集
-                </button>
+  <article class="user-admin-card">
+    <header class="user-admin-card-head user-admin-card-head--table">
+      <h2 class="user-admin-card-title">登録ユーザー一覧</h2>
+      <div class="user-admin-table-tools">
+        <label class="visually-hidden" for="user-table-search">ユーザー検索</label>
+        <div class="user-admin-search">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input id="user-table-search" type="search" placeholder="検索…" data-user-table-search autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </header>
+    <div class="user-admin-card-body">
+      {% if users %}
+      <div class="user-admin-table-wrap desktop-only">
+        <table class="table table-sm align-middle mb-0 user-admin-table" aria-label="ユーザー一覧">
+          <thead>
+            <tr>
+              <th scope="col" class="text-center">ID</th>
+              <th scope="col">氏名</th>
+              <th scope="col">メールアドレス</th>
+              <th scope="col">権限</th>
+              <th scope="col">最終ログイン</th>
+              <th scope="col">作成日</th>
+              <th scope="col" class="text-end">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr data-user-row data-search-text="{{ (user.username ~ ' ' ~ (user.name or '') ~ ' ' ~ (user.email or ''))|lower }}">
+              <td class="text-center tabular-nums user-admin-id">{{ "%03d"|format(user.id) }}</td>
+              <td>
+                <div class="user-admin-person">
+                  <div class="user-admin-avatar" aria-hidden="true">{{ (user.name or user.username)[:1] }}</div>
+                  <div>
+                    <div class="user-admin-name">{{ user.name or user.username }}</div>
+                    <div class="user-admin-sub">{{ user.username }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="user-admin-email">{{ user.email or "-" }}</td>
+              <td>
+                {% if user.role == 'admin' %}
+                <span class="user-role-chip user-role-chip--admin">管理者</span>
+                {% else %}
+                <span class="user-role-chip user-role-chip--user">一般</span>
+                {% endif %}
+              </td>
+              <td class="tabular-nums user-admin-time">{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</td>
+              <td class="tabular-nums user-admin-time">{{ user.created_at|fmt_dt }}</td>
+              <td class="text-end">
+                <div class="user-admin-actions">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    data-user-edit
+                    data-user-id="{{ user.id }}"
+                    data-user-username="{{ user.username|e }}"
+                    data-user-name="{{ (user.name or '')|e }}"
+                    data-user-email="{{ (user.email or '')|e }}"
+                    data-user-role="{{ user.role }}"
+                    aria-label="{{ user.username }} を編集"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                  </button>
+                  {% if user.id != current_user.id %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-confirm-form="delete-user-{{ user.id }}"
+                    data-confirm-title="ユーザーを削除"
+                    data-confirm-message="このユーザーを削除します。関連監査ログの user_id は解除されます。"
+                    data-confirm-danger="対象ユーザー: {{ user.username }}"
+                    aria-label="{{ user.username }} を削除"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                  </button>
+                  {% endif %}
+                </div>
                 {% if user.id != current_user.id %}
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-danger"
-                  data-confirm-form="delete-user-{{ user.id }}"
-                  data-confirm-title="ユーザーを削除"
-                  data-confirm-message="このユーザーを削除します。関連監査ログの user_id は解除されます。"
-                  data-confirm-danger="対象ユーザー: {{ user.username }}"
-                >
-                  削除
-                </button>
                 <form id="delete-user-{{ user.id }}" method="post" class="d-none">
                   <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="user_id" value="{{ user.id }}">
                 </form>
                 {% endif %}
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="mobile-only">
-      <div class="mobile-record-list">
-        {% for user in users %}
-        <article class="mobile-record-card">
-          <div class="mobile-record-title">
-            <strong>{{ user.username }}</strong>
-            {% if user.role == 'admin' %}
-            <span class="badge bg-danger">管理者</span>
-            {% else %}
-            <span class="badge bg-secondary">一般</span>
-            {% endif %}
-          </div>
-          <dl class="mobile-record-grid">
-            <dt>氏名</dt>
-            <dd>{{ user.name or '-' }}</dd>
-            <dt>メール</dt>
-            <dd>{{ user.email or '-' }}</dd>
-            <dt>最終ログイン</dt>
-            <dd>{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</dd>
-            <dt>作成日時</dt>
-            <dd>{{ user.created_at|fmt_dt }}</dd>
-          </dl>
-          <div class="table-actions mt-3">
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-primary"
-              data-user-edit
-              data-user-id="{{ user.id }}"
-              data-user-username="{{ user.username|e }}"
-              data-user-name="{{ (user.name or '')|e }}"
-              data-user-email="{{ (user.email or '')|e }}"
-              data-user-role="{{ user.role }}"
-            >
-              編集
-            </button>
-            {% if user.id != current_user.id %}
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger"
-              data-confirm-form="delete-user-{{ user.id }}"
-              data-confirm-title="ユーザーを削除"
-              data-confirm-message="このユーザーを削除します。関連監査ログの user_id は解除されます。"
-              data-confirm-danger="対象ユーザー: {{ user.username }}"
-            >
-              削除
-            </button>
-            {% endif %}
-          </div>
-        </article>
-        {% endfor %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+
+      <div class="mobile-only">
+        <div class="mobile-record-list">
+          {% for user in users %}
+          <article class="mobile-record-card" data-user-row data-search-text="{{ (user.username ~ ' ' ~ (user.name or '') ~ ' ' ~ (user.email or ''))|lower }}">
+            <div class="mobile-record-title">
+              <strong>{{ user.name or user.username }}</strong>
+              {% if user.role == "admin" %}
+              <span class="user-role-chip user-role-chip--admin">管理者</span>
+              {% else %}
+              <span class="user-role-chip user-role-chip--user">一般</span>
+              {% endif %}
+            </div>
+            <dl class="mobile-record-grid">
+              <dt>ID</dt>
+              <dd class="tabular-nums">{{ "%03d"|format(user.id) }}</dd>
+              <dt>ユーザー名</dt>
+              <dd>{{ user.username }}</dd>
+              <dt>メール</dt>
+              <dd>{{ user.email or "-" }}</dd>
+              <dt>最終ログイン</dt>
+              <dd class="tabular-nums">{{ user.last_login_at|fmt_dt if user.last_login_at else '-' }}</dd>
+              <dt>作成日</dt>
+              <dd class="tabular-nums">{{ user.created_at|fmt_dt }}</dd>
+            </dl>
+            <div class="user-admin-actions mt-3">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                data-user-edit
+                data-user-id="{{ user.id }}"
+                data-user-username="{{ user.username|e }}"
+                data-user-name="{{ (user.name or '')|e }}"
+                data-user-email="{{ (user.email or '')|e }}"
+                data-user-role="{{ user.role }}"
+              >
+                編集
+              </button>
+              {% if user.id != current_user.id %}
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                data-confirm-form="delete-user-{{ user.id }}"
+                data-confirm-title="ユーザーを削除"
+                data-confirm-message="このユーザーを削除します。関連監査ログの user_id は解除されます。"
+                data-confirm-danger="対象ユーザー: {{ user.username }}"
+              >
+                削除
+              </button>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+
+      <footer class="user-admin-table-foot">
+        <p>全 <strong class="tabular-nums">{{ users|length }}</strong> 件</p>
+      </footer>
+      {% else %}
+      <div class="empty-state">ユーザーが登録されていません。上のフォームから作成してください。</div>
+      {% endif %}
     </div>
-    {% else %}
-    <div class="empty-state">ユーザーが登録されていません。上のフォームから作成してください。</div>
-    {% endif %}
-  </div>
+  </article>
 </section>
 
-<div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalTitle" aria-hidden="true">
+<div class="modal fade user-edit-modal" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalTitle" aria-hidden="true">
   <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-content user-edit-modal-content">
       <form method="post" id="userEditForm">
-        <div class="modal-header">
+        <div class="modal-header user-edit-modal-head">
           <h2 class="modal-title h5" id="userEditModalTitle">ユーザー編集</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body user-edit-modal-body">
           <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
           <input type="hidden" name="action" value="update">
           <input type="hidden" name="user_id" id="edit-user-id">
 
           <div class="mb-3">
             <label class="form-label" for="edit-username">ユーザーID</label>
-            <input type="text" class="form-control" id="edit-username" disabled>
+            <input type="text" class="form-control" id="edit-username" disabled autocomplete="username">
             <div class="form-hint">ユーザーIDは変更できません。</div>
           </div>
           <div class="mb-3">
             <label class="form-label" for="edit-password">パスワード</label>
-            <input type="password" class="form-control" id="edit-password" name="password" placeholder="変更する場合のみ入力">
+            <input type="password" class="form-control" id="edit-password" name="password" placeholder="変更する場合のみ入力" autocomplete="new-password" minlength="8">
             <div class="form-hint">変更しない場合は空欄のままにしてください。</div>
           </div>
           <div class="mb-3">
             <label class="form-label" for="edit-name">氏名</label>
-            <input type="text" class="form-control" id="edit-name" name="name">
+            <input type="text" class="form-control" id="edit-name" name="name" autocomplete="name" data-modal-initial-focus>
           </div>
           <div class="mb-3">
             <label class="form-label" for="edit-email">メール</label>
-            <input type="email" class="form-control" id="edit-email" name="email">
+            <input type="email" class="form-control" id="edit-email" name="email" autocomplete="email" inputmode="email" spellcheck="false">
           </div>
           <div class="mb-0">
             <label class="form-label" for="edit-role">権限</label>
@@ -215,7 +253,7 @@
             </select>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer user-edit-modal-foot">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
           <button type="submit" class="btn btn-primary">更新</button>
         </div>
@@ -230,4 +268,21 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/admin_confirm_modal.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin_users_modal.js') }}"></script>
+<script>
+  (() => {
+    const searchInput = document.querySelector("[data-user-table-search]");
+    if (!searchInput) {
+      return;
+    }
+    const rows = Array.from(document.querySelectorAll("[data-user-row]"));
+    const applyFilter = () => {
+      const keyword = searchInput.value.trim().toLowerCase();
+      rows.forEach((row) => {
+        const text = row.getAttribute("data-search-text") || "";
+        row.classList.toggle("d-none", Boolean(keyword) && !text.includes(keyword));
+      });
+    };
+    searchInput.addEventListener("input", applyFilter);
+  })();
+</script>
 {% endblock %}

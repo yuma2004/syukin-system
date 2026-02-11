@@ -1,0 +1,179 @@
+﻿/* Login/auth page styles */
+
+.app-body--auth {
+  background-color: #f4f7fb;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-main--auth {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.auth-container-wrap {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.auth-panel {
+  width: 100%;
+}
+
+.auth-card {
+  border: 1px solid #dbe4ef;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  box-shadow: 0 0.35rem 1.5rem rgba(15, 23, 42, 0.08);
+  padding: 2rem;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.9rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 110, 253, 0.12);
+  color: var(--ui-focus);
+}
+
+.auth-logo .material-symbols-outlined {
+  font-size: 2rem;
+}
+
+.auth-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.auth-subtitle {
+  margin: 0.45rem 0 0;
+  font-size: 0.92rem;
+  color: var(--ui-muted);
+}
+
+.auth-flash-stack {
+  margin-bottom: 1rem;
+}
+
+.auth-flash-stack .alert {
+  margin-bottom: 0.5rem;
+}
+
+.auth-form {
+  margin-top: 0.25rem;
+}
+
+.auth-field {
+  margin-bottom: 0.9rem;
+}
+
+.auth-label {
+  margin-bottom: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.auth-input {
+  min-height: 2.75rem;
+  border-color: #dbe4ef;
+  border-radius: 0.65rem;
+  color: #0f172a;
+}
+
+.auth-input::placeholder {
+  color: #7b8695;
+}
+
+.auth-input:focus {
+  border-color: var(--ui-focus);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.14);
+}
+
+.auth-password-wrap {
+  position: relative;
+}
+
+.auth-input-password {
+  padding-right: 2.7rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.7rem;
+  height: 100%;
+  border: 0;
+  border-radius: 0 0.65rem 0.65rem 0;
+  background: transparent;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.auth-password-toggle .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.auth-remember {
+  margin: 0.45rem 0 1.2rem;
+  color: #3f4b5b;
+  font-size: 0.88rem;
+}
+
+.auth-remember .form-check-input {
+  cursor: pointer;
+}
+
+.auth-remember .form-check-label {
+  cursor: pointer;
+}
+
+.auth-submit {
+  min-height: 2.75rem;
+  font-weight: 700;
+}
+
+.auth-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e7ecf2;
+  text-align: center;
+}
+
+.auth-footer-text {
+  margin-bottom: 0;
+  color: #6c7787;
+  font-size: 0.75rem;
+}
+
+
+@media (max-width: 767.98px) {
+  .app-main--auth {
+    padding: 0.75rem;
+  }
+
+  .auth-card {
+    padding: 1.4rem 1rem;
+  }
+
+  .auth-title {
+    font-size: 1.4rem;
+  }
+}

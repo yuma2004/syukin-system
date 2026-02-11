@@ -1,34 +1,120 @@
 {% extends "layout.html" %}
-{% block title %}ログイン | 出退勤システム{% endblock %}
+{% block title %}ログイン - 出退勤システム{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8 col-lg-5">
-    <section class="card section-card">
-      <div class="card-body p-4">
-        <header class="page-header text-center">
-          <h1 class="page-title h4">ログイン</h1>
-          <p class="text-muted mb-0" id="login-help">ユーザーIDとパスワードを入力して、出退勤操作を開始してください。</p>
-        </header>
-
-        <form method="post" class="mt-4" aria-describedby="login-help">
-          <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-          <div class="mb-3">
-            <label for="username" class="form-label">ユーザーID</label>
-            <input type="text" class="form-control" id="username" name="username" required autofocus autocomplete="username">
-          </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">パスワード</label>
-            <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
-          </div>
-          <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me" value="on">
-            <label class="form-check-label" for="remember_me">{{ remember_days }}日間ログイン状態を保持する</label>
-          </div>
-          <button type="submit" class="btn btn-primary w-100">ログインする</button>
-        </form>
+<section class="auth-panel">
+  <div class="auth-card">
+    <header class="auth-header">
+      <div class="auth-logo" aria-hidden="true">
+        <span class="material-symbols-outlined">schedule</span>
       </div>
-    </section>
+      <h1 class="auth-title text-balance">ログイン</h1>
+      <p class="auth-subtitle text-pretty" id="login-help">アカウントにアクセスしてください</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack auth-flash-stack" aria-live="polite" aria-atomic="true">
+          {% for category, msg in messages %}
+            {% set bs_category = 'danger' if category == 'error' else category %}
+            {% if bs_category in ['danger', 'warning'] %}
+            <div class="alert alert-{{ bs_category }} mb-2" role="alert">{{ msg }}</div>
+            {% else %}
+            <div class="alert alert-{{ bs_category }} mb-2" role="status">{{ msg }}</div>
+            {% endif %}
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" class="auth-form" aria-describedby="login-help">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+
+      <div class="auth-field">
+        <label for="username" class="form-label auth-label">ユーザー名</label>
+        <input
+          type="text"
+          class="form-control auth-input"
+          id="username"
+          name="username"
+          placeholder="ユーザー名を入力"
+          required
+          autocomplete="username"
+        >
+      </div>
+
+      <div class="auth-field">
+        <label for="password" class="form-label auth-label">パスワード</label>
+        <div class="auth-password-wrap">
+          <input
+            type="password"
+            class="form-control auth-input auth-input-password"
+            id="password"
+            name="password"
+            placeholder="パスワードを入力"
+            required
+            autocomplete="current-password"
+          >
+          <button
+            type="button"
+            class="auth-password-toggle"
+            id="password-toggle"
+            aria-label="パスワードを表示する"
+            aria-controls="password"
+            aria-pressed="false"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-check auth-remember">
+        <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me" value="on">
+        <label class="form-check-label" for="remember_me">{{ remember_days }}日間ログイン状態を保持する</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 auth-submit">ログイン</button>
+    </form>
+
+    <footer class="auth-footer">
+      <p class="auth-footer-text">© Attendance App. All rights reserved.</p>
+    </footer>
   </div>
-</div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  (() => {
+    const passwordInput = document.getElementById("password");
+    const toggleButton = document.getElementById("password-toggle");
+    const usernameInput = document.getElementById("username");
+    if (!passwordInput || !toggleButton) {
+      return;
+    }
+
+    // Avoid opening the software keyboard on mobile on first paint.
+    if (usernameInput && window.matchMedia("(pointer: fine)").matches) {
+      usernameInput.focus({ preventScroll: true });
+    }
+
+    const icon = toggleButton.querySelector(".material-symbols-outlined");
+    const applyState = (isVisible) => {
+      passwordInput.type = isVisible ? "text" : "password";
+      toggleButton.setAttribute("aria-pressed", String(isVisible));
+      toggleButton.setAttribute(
+        "aria-label",
+        isVisible ? "パスワードを非表示にする" : "パスワードを表示する"
+      );
+      if (icon) {
+        icon.textContent = isVisible ? "visibility" : "visibility_off";
+      }
+    };
+
+    applyState(false);
+    toggleButton.addEventListener("click", () => {
+      applyState(passwordInput.type === "password");
+      passwordInput.focus({ preventScroll: true });
+    });
+  })();
+</script>
 {% endblock %}
 

@@ -3,24 +3,20 @@
   {% set ns.total_seconds = ns.total_seconds + day.seconds %}
   {% set ns.total_shifts = ns.total_shifts + day.count %}
 {% endfor %}
-<div class="mt-4">
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-    <h3 class="h6 mb-0">日別集計</h3>
-    <div class="d-flex gap-2 flex-wrap">
-      <div class="metric-card">
-        <div class="metric-label">合計実働</div>
-        <div class="metric-value">{{ ns.total_seconds|fmt_hms }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">シフト数</div>
-        <div class="metric-value">{{ ns.total_shifts }}</div>
-      </div>
+<details class="admin-daily-card admin-disclosure">
+  <summary class="admin-disclosure-summary">
+    <div>
+      <span class="admin-disclosure-title">日別集計</span>
+      <span class="admin-disclosure-sub">合計実働 {{ ns.total_seconds|fmt_hms }} / シフト {{ ns.total_shifts }}件</span>
     </div>
-  </div>
+    <span class="material-symbols-outlined admin-disclosure-icon" aria-hidden="true">expand_more</span>
+  </summary>
+
+  <div class="admin-disclosure-body">
   {% if daily_totals %}
-  <div class="table-wrap desktop-only">
-    <table class="table table-sm align-middle mb-0" aria-label="日別集計">
-      <thead class="table-light">
+  <div class="admin-table-wrap desktop-only">
+    <table class="table table-sm align-middle mb-0 admin-shift-table" aria-label="日別集計">
+      <thead>
         <tr>
           <th scope="col">日付</th>
           <th scope="col">シフト数</th>
@@ -32,7 +28,7 @@
         <tr>
           <td>{{ day.date|fmt_date_ja }}</td>
           <td>{{ day.count }}</td>
-          <td>{{ day.worked_hms }}</td>
+          <td class="tabular-nums">{{ day.worked_hms }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -49,7 +45,7 @@
           <dt>シフト数</dt>
           <dd>{{ day.count }}</dd>
           <dt>実働合計</dt>
-          <dd>{{ day.worked_hms }}</dd>
+          <dd class="tabular-nums">{{ day.worked_hms }}</dd>
         </dl>
       </article>
       {% endfor %}
@@ -58,4 +54,5 @@
   {% else %}
   <div class="empty-state">条件に一致するシフトがありません。</div>
   {% endif %}
-</div>
+  </div>
+</details>

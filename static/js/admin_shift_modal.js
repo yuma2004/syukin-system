@@ -19,10 +19,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadingBox = modalEl.querySelector("[data-loading]");
   const clockInMeta = document.getElementById("shiftEditClockInMeta");
   const clockOutMeta = document.getElementById("shiftEditClockOutMeta");
+  const detailLink = document.getElementById("shiftEditDetailLink");
 
   if (ipLabel) {
     ipLabel.style.whiteSpace = "pre-line";
   }
+
+  const focusInitialField = () => {
+    const initialTarget = modalEl.querySelector("[data-modal-initial-focus]");
+    if (!initialTarget) {
+      return;
+    }
+    const applyFocus = () => {
+      if (!modalEl.classList.contains("show")) {
+        return;
+      }
+      if (initialTarget.matches(":disabled")) {
+        return;
+      }
+      initialTarget.focus({ preventScroll: true });
+    };
+    window.setTimeout(applyFocus, 0);
+    window.setTimeout(applyFocus, 120);
+  };
 
   const toggleLoading = (state) => {
     if (!loadingBox) {
@@ -172,6 +191,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const detailUrl = btn.getAttribute("data-detail-url");
       const actionUrl = btn.getAttribute("data-action-url");
       form.setAttribute("action", actionUrl);
+      if (detailLink) {
+        detailLink.setAttribute("href", actionUrl || "#");
+      }
       clockInInput.value = "";
       clockOutInput.value = "";
       userLabel.textContent = "読み込み中…";
@@ -230,4 +252,5 @@ document.addEventListener("DOMContentLoaded", () => {
     announceStatus("");
     form.removeAttribute("aria-busy");
   });
+  modalEl.addEventListener("shown.bs.modal", focusInitialField);
 });
