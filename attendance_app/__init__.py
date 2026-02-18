@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, current_app, jsonify, redirect, request, url_for
 from flask_login import current_user
 from sqlalchemy import inspect
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -12,7 +12,7 @@ from .models import User
 from .routes import register_blueprints
 from .utils.datetime_utils import fmt_date_ja, fmt_dt, fmt_hms
 from .utils.dev_seed import seed_dev_users_if_enabled
-from .utils.security import ensure_csrf
+from .utils.security import ensure_csrf, verify_csrf
 
 
 @login_manager.user_loader
@@ -83,6 +83,25 @@ def _ensure_local_schema(app):
             db.create_all()
 
 
+_CSRF_PROTECTED_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+def _install_csrf_protection(app):
+    @app.before_request
+    def _csrf_guard():
+        ensure_csrf()
+        if request.method in _CSRF_PROTECTED_METHODS:
+            verify_csrf()
+
+
+def _api_unauthorized():
+    return jsonify({"ok": False, "error": {"message": "login required"}}), 401
+
+
+def _serve_spa_index(app):
+    return app.send_static_file("spa/index.html")
+
+
 def create_app(test_config=None):
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_proto=1)
@@ -96,6 +115,7 @@ def create_app(test_config=None):
     _ensure_local_schema(app)
     seed_dev_users_if_enabled(app)
     login_manager.init_app(app)
+    _install_csrf_protection(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message = "このページにアクセスするにはログインしてください。"
     login_manager.login_message_category = "warning"
@@ -106,10 +126,14 @@ def create_app(test_config=None):
     app.add_template_filter(fmt_hms, "fmt_hms")
     app.add_template_filter(fmt_date_ja, "fmt_date_ja")
 
+    @login_manager.unauthorized_handler
+    def _login_required_handler():
+        if request.path == "/api" or request.path.startswith("/api/"):
+            return _api_unauthorized()
+        return redirect(url_for("auth.login"))
+
     @app.context_processor
     def inject_globals():
-        if current_user.is_authenticated:
-            ensure_csrf()
         return {
             "current_user": current_user,
             "is_admin": (current_user.is_authenticated and current_user.is_admin()),
@@ -118,6 +142,13 @@ def create_app(test_config=None):
 
     register_blueprints(app)
     register_cli(app)
+
+    @app.get("/app", defaults={"path": ""})
+    @app.get("/app/<path:path>")
+    def serve_react_app(path=None):  # noqa: ARG001
+        if not current_app.config.get("REACT_UI_ENABLED"):
+            return redirect(url_for("auth.login"))
+        return _serve_spa_index(app)
 
     @app.get("/favicon.ico")
     def favicon():

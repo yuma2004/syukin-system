@@ -62,6 +62,14 @@ def test_login_page_uses_desktop_only_initial_focus(client):
     assert 'matchMedia("(pointer: fine)")' in html
 
 
+def test_login_page_initializes_csrf_token_in_session(client):
+    response = client.get("/login")
+    assert response.status_code == 200
+    with client.session_transaction() as sess:
+        assert isinstance(sess.get("csrf_token"), str)
+        assert sess["csrf_token"]
+
+
 def test_layout_includes_theme_color_and_favicon(client):
     response = client.get("/login")
     html = response.get_data(as_text=True)

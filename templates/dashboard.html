@@ -19,15 +19,43 @@
   "overtime_hms": "00:00",
   "overtime_progress": 0
 }, true) %}
+{% set next_action_label = "出勤" %}
+{% set next_action_help = "勤務開始時に打刻します。" %}
+{% if open_shift and open_break %}
+  {% set next_action_label = "休憩終了" %}
+  {% set next_action_help = "業務に戻るタイミングで押してください。" %}
+{% elif open_shift %}
+  {% set next_action_label = "退勤" %}
+  {% set next_action_help = "勤務終了時に打刻してください。" %}
+{% endif %}
 <section class="dash-shell">
   <header class="dash-welcome">
+    <p class="dash-welcome-kicker">ATTENDANCE HUB</p>
     <h1 class="dash-welcome-title text-balance">{{ greeting_text }}、{{ display_name }}さん</h1>
     <p class="dash-welcome-sub text-pretty">今日の業務状況を確認して、打刻を実行できます。</p>
   </header>
 
+  <section class="dash-live-grid" aria-label="状況サマリー">
+    <article class="dash-live-card dash-live-card--{{ status_tone }}">
+      <p class="dash-live-label">現在ステータス</p>
+      <p class="dash-live-value">{{ status_text }}</p>
+      <p class="dash-live-note">リアルタイム更新</p>
+    </article>
+    <article class="dash-live-card dash-live-card--accent">
+      <p class="dash-live-label">次の推奨操作</p>
+      <p class="dash-live-value">{{ next_action_label }}</p>
+      <p class="dash-live-note">{{ next_action_help }}</p>
+    </article>
+    <article class="dash-live-card">
+      <p class="dash-live-label">本日の累計実働</p>
+      <p class="dash-live-value tabular-nums">{{ current_worked_label }}</p>
+      <p class="dash-live-note">{{ LOCAL_TZ_NAME }}</p>
+    </article>
+  </section>
+
   <div class="dash-layout">
     <div class="dash-main-column">
-      <section class="dash-card dash-clock-card">
+      <section class="dash-card dash-clock-card dash-card--hero">
         <div class="dash-clock-head">
           <p class="dash-clock-date tabular-nums" id="dash-current-date" data-now="{{ dashboard_now_iso }}" data-timezone="{{ dashboard_timezone }}">-</p>
           <p class="dash-clock-time tabular-nums" id="dash-current-time" data-now="{{ dashboard_now_iso }}" data-timezone="{{ dashboard_timezone }}">-</p>
@@ -37,16 +65,22 @@
           </p>
         </div>
 
+        <div class="dash-action-guide" role="status">
+          <span class="material-symbols-outlined" aria-hidden="true">assistant_navigation</span>
+          <p>次の推奨操作は <strong>{{ next_action_label }}</strong> です。{{ next_action_help }}</p>
+        </div>
+
         <form method="post" class="dash-actions-grid" aria-label="打刻操作">
           <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
           <button
             type="submit"
             formaction="{{ url_for('attendance.clock_in') }}"
-            class="dash-action-btn dash-action-btn--clock-in"
+            class="dash-action-btn dash-action-btn--clock-in{% if not open_shift %} is-primary{% endif %}"
             {% if open_shift %}disabled aria-disabled="true"{% endif %}
           >
             <span class="material-symbols-outlined" aria-hidden="true">login</span>
-            <span>出勤</span>
+            <span class="dash-action-main">出勤</span>
+            <span class="dash-action-note">勤務を開始</span>
           </button>
 
           <button
@@ -56,27 +90,30 @@
             {% if not open_shift or open_break %}disabled aria-disabled="true"{% endif %}
           >
             <span class="material-symbols-outlined" aria-hidden="true">coffee</span>
-            <span>休憩開始</span>
+            <span class="dash-action-main">休憩開始</span>
+            <span class="dash-action-note">休憩に入る</span>
           </button>
 
           <button
             type="submit"
             formaction="{{ url_for('attendance.break_end') }}"
-            class="dash-action-btn dash-action-btn--break-end"
+            class="dash-action-btn dash-action-btn--break-end{% if open_break %} is-primary{% endif %}"
             {% if not open_break %}disabled aria-disabled="true"{% endif %}
           >
             <span class="material-symbols-outlined" aria-hidden="true">work_history</span>
-            <span>休憩終了</span>
+            <span class="dash-action-main">休憩終了</span>
+            <span class="dash-action-note">業務に戻る</span>
           </button>
 
           <button
             type="submit"
             formaction="{{ url_for('attendance.clock_out') }}"
-            class="dash-action-btn dash-action-btn--clock-out"
+            class="dash-action-btn dash-action-btn--clock-out{% if open_shift and not open_break %} is-primary{% endif %}"
             {% if not open_shift %}disabled aria-disabled="true"{% endif %}
           >
             <span class="material-symbols-outlined" aria-hidden="true">logout</span>
-            <span>退勤</span>
+            <span class="dash-action-main">退勤</span>
+            <span class="dash-action-note">勤務を終了</span>
           </button>
         </form>
       </section>

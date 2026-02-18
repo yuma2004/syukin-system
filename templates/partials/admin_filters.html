@@ -1,7 +1,14 @@
 <section class="admin-filter-card" aria-labelledby="admin-filter-title">
   <div class="admin-filter-head">
-    <h2 class="admin-filter-title" id="admin-filter-title">フィルター</h2>
+    <h2 class="admin-filter-title" id="admin-filter-title">
+      <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+      <span>フィルター</span>
+    </h2>
     <p class="admin-filter-help" id="admin-filter-help">期間とユーザーIDで一覧を絞り込みます。</p>
+  </div>
+  <div class="admin-filter-chipline" aria-hidden="true">
+    <span class="admin-filter-chip">期間 {{ start }} ～ {{ end }}</span>
+    <span class="admin-filter-chip">{{ user_username if user_username else "全ユーザー" }}</span>
   </div>
 
   <form class="admin-filter-form" method="get" aria-describedby="admin-filter-help">

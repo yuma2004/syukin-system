@@ -34,6 +34,7 @@ def build_base_config():
         "SECRET_KEY": os.getenv("SECRET_KEY") or secrets.token_urlsafe(32),
         "SQLALCHEMY_DATABASE_URI": DATABASE_URL,
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+        "REACT_UI_ENABLED": env_bool("REACT_UI_ENABLED", False),
         # Dev-only helpers. Keep disabled by default.
         "ALLOW_DEV_LOGIN": env_bool("ALLOW_DEV_LOGIN", False),
         "DEV_SEED_RESET_PASSWORDS": env_bool("DEV_SEED_RESET_PASSWORDS", False),

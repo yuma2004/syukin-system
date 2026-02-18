@@ -1,8 +1,52 @@
-﻿/* Login/auth page styles */
+/* Login/auth page styles */
 
 .app-body--auth {
-  background-color: #f4f7fb;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --auth-bg-top: #f6f2ea;
+  --auth-bg-bottom: #d8e2ef;
+  --auth-surface: rgba(255, 255, 255, 0.84);
+  --auth-border: rgba(15, 45, 84, 0.16);
+  --auth-text: #10223e;
+  --auth-muted: #5e6f86;
+  --auth-focus: #1f6fd9;
+  --auth-focus-soft: rgba(31, 111, 217, 0.22);
+  --auth-accent: #ff8a3c;
+
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 144, 41, 0.3), transparent 34%),
+    radial-gradient(circle at 90% 100%, rgba(34, 148, 214, 0.27), transparent 36%),
+    linear-gradient(165deg, var(--auth-bg-top), var(--auth-bg-bottom));
+  color: var(--auth-text);
+  font-family: "Noto Sans JP", "Manrope", "Segoe UI", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-body--auth::before,
+.app-body--auth::after {
+  content: "";
+  position: fixed;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(2px);
+  animation: auth-blob-float 18s ease-in-out infinite;
+}
+
+.app-body--auth::before {
+  width: 24rem;
+  height: 24rem;
+  left: -7rem;
+  top: -8rem;
+  background: radial-gradient(circle, rgba(255, 138, 60, 0.26), rgba(255, 138, 60, 0));
+}
+
+.app-body--auth::after {
+  width: 30rem;
+  height: 30rem;
+  right: -10rem;
+  bottom: -12rem;
+  background: radial-gradient(circle, rgba(31, 111, 217, 0.25), rgba(31, 111, 217, 0));
+  animation-delay: -9s;
 }
 
 .app-main--auth {
@@ -10,12 +54,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.25rem;
+  position: relative;
+  z-index: 1;
 }
 
 .auth-container-wrap {
   width: 100%;
-  max-width: 28rem;
+  max-width: 34rem;
 }
 
 .auth-panel {
@@ -23,45 +69,90 @@
 }
 
 .auth-card {
-  border: 1px solid #dbe4ef;
-  border-radius: 0.9rem;
-  background: #ffffff;
-  box-shadow: 0 0.35rem 1.5rem rgba(15, 23, 42, 0.08);
-  padding: 2rem;
+  border: 1px solid var(--auth-border);
+  border-radius: 1.25rem;
+  background: var(--auth-surface);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1rem 2.8rem rgba(16, 34, 62, 0.16);
+  padding: 2.25rem;
+  position: relative;
+  overflow: hidden;
+  animation: auth-card-rise 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 0.36rem;
+  background: linear-gradient(90deg, #1f6fd9 0%, #2597d8 44%, #ff8a3c 100%);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.6rem;
+}
+
+.auth-kicker {
+  margin: 0 0 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #58708f;
 }
 
 .auth-logo {
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto 0.9rem;
-  border-radius: 0.75rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0 auto 0.92rem;
+  border-radius: 0.95rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 110, 253, 0.12);
-  color: var(--ui-focus);
+  background: linear-gradient(145deg, rgba(31, 111, 217, 0.18), rgba(255, 138, 60, 0.2));
+  color: #1d62bf;
+  box-shadow: inset 0 0 0 1px rgba(31, 111, 217, 0.16);
 }
 
 .auth-logo .material-symbols-outlined {
-  font-size: 2rem;
+  font-size: 2.05rem;
 }
 
 .auth-title {
   margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: "Manrope", "Noto Sans JP", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #0f2039;
 }
 
 .auth-subtitle {
-  margin: 0.45rem 0 0;
-  font-size: 0.92rem;
-  color: var(--ui-muted);
+  margin: 0.44rem 0 0;
+  font-size: 0.94rem;
+  color: var(--auth-muted);
+}
+
+.auth-security-note {
+  margin: 0.8rem auto 0;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  border: 1px solid rgba(31, 111, 217, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #35567d;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.auth-security-note .material-symbols-outlined {
+  font-size: 0.95rem;
+  color: #1d62bf;
 }
 
 .auth-flash-stack {
@@ -70,37 +161,42 @@
 
 .auth-flash-stack .alert {
   margin-bottom: 0.5rem;
+  border-radius: 0.72rem;
+  border-width: 1px;
 }
 
 .auth-form {
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
 }
 
 .auth-field {
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.95rem;
 }
 
 .auth-label {
-  margin-bottom: 0.35rem;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #1e293b;
+  margin-bottom: 0.38rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1b365d;
 }
 
 .auth-input {
-  min-height: 2.75rem;
-  border-color: #dbe4ef;
-  border-radius: 0.65rem;
-  color: #0f172a;
+  min-height: 2.9rem;
+  border: 1px solid rgba(31, 59, 94, 0.2);
+  border-radius: 0.78rem;
+  color: var(--auth-text);
+  background: rgba(255, 255, 255, 0.72);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .auth-input::placeholder {
-  color: #7b8695;
+  color: #7d8ea4;
 }
 
 .auth-input:focus {
-  border-color: var(--ui-focus);
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.14);
+  border-color: var(--auth-focus);
+  background: #fff;
+  box-shadow: 0 0 0 0.23rem var(--auth-focus-soft);
 }
 
 .auth-password-wrap {
@@ -108,37 +204,47 @@
 }
 
 .auth-input-password {
-  padding-right: 2.7rem;
+  padding-right: 2.9rem;
 }
 
 .auth-password-toggle {
   position: absolute;
   top: 0;
   right: 0;
-  width: 2.7rem;
+  width: 2.9rem;
   height: 100%;
   border: 0;
-  border-radius: 0 0.65rem 0.65rem 0;
+  border-radius: 0 0.78rem 0.78rem 0;
   background: transparent;
-  color: #6b7280;
+  color: #5f7188;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
+.auth-password-toggle:hover {
+  color: #204875;
+}
+
 .auth-password-toggle .material-symbols-outlined {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
 }
 
 .auth-remember {
-  margin: 0.45rem 0 1.2rem;
-  color: #3f4b5b;
+  margin: 0.55rem 0 1.15rem;
+  color: #3f5574;
   font-size: 0.88rem;
 }
 
 .auth-remember .form-check-input {
   cursor: pointer;
+  border-color: rgba(31, 59, 94, 0.3);
+}
+
+.auth-remember .form-check-input:checked {
+  background-color: #1f6fd9;
+  border-color: #1f6fd9;
 }
 
 .auth-remember .form-check-label {
@@ -146,34 +252,89 @@
 }
 
 .auth-submit {
-  min-height: 2.75rem;
-  font-weight: 700;
+  min-height: 2.95rem;
+  border: none;
+  border-radius: 0.8rem;
+  font-family: "Manrope", "Noto Sans JP", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: linear-gradient(103deg, #1f6fd9 0%, #2f86e8 55%, #35a3ea 100%);
+  box-shadow: 0 0.55rem 1.2rem rgba(31, 111, 217, 0.34);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.auth-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.72rem 1.45rem rgba(31, 111, 217, 0.38);
+}
+
+.auth-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: #5f6f85;
+  text-align: center;
 }
 
 .auth-footer {
-  margin-top: 1.5rem;
+  margin-top: 1.45rem;
   padding-top: 1rem;
-  border-top: 1px solid #e7ecf2;
+  border-top: 1px solid rgba(31, 59, 94, 0.14);
   text-align: center;
 }
 
 .auth-footer-text {
   margin-bottom: 0;
-  color: #6c7787;
+  color: #6c7f97;
   font-size: 0.75rem;
 }
 
+@keyframes auth-card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes auth-blob-float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-14px) translateX(8px);
+  }
+}
 
 @media (max-width: 767.98px) {
   .app-main--auth {
-    padding: 0.75rem;
+    padding: 0.85rem;
   }
 
   .auth-card {
-    padding: 1.4rem 1rem;
+    border-radius: 1rem;
+    padding: 1.45rem 1rem;
   }
 
   .auth-title {
-    font-size: 1.4rem;
+    font-size: 1.72rem;
+  }
+
+  .auth-note {
+    font-size: 0.74rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-body--auth::before,
+  .app-body--auth::after,
+  .auth-card,
+  .auth-submit {
+    animation: none !important;
+    transition: none !important;
   }
 }

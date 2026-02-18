@@ -220,13 +220,77 @@
 }
 
 @media (max-width: 767.98px) {
+  .admin-app-sidebar {
+    padding: 0.72rem 0.82rem;
+    gap: 0.62rem;
+  }
+
+  .admin-app-brand {
+    font-size: 0.92rem;
+  }
+
+  .admin-app-user {
+    display: none;
+  }
+
   .admin-app-nav {
-    grid-template-columns: 1fr;
+    display: flex;
+    grid-template-columns: none;
+    gap: 0.42rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.16rem;
+    scrollbar-width: thin;
+  }
+
+  .admin-app-nav-link {
+    flex: none;
+    border: 1px solid #d8e3f0;
+    background: #ffffff;
+    padding: 0.4rem 0.58rem;
+    font-size: 0.77rem;
+    white-space: nowrap;
+  }
+
+  .admin-app-nav-link.is-active {
+    border-color: #bdd8f7;
+  }
+
+  .admin-app-nav-link .material-symbols-outlined {
+    font-size: 1rem;
+  }
+
+  .admin-app-sidebar-foot {
+    margin-top: 0.08rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.46rem;
+  }
+
+  .admin-app-link-muted {
+    font-size: 0.72rem;
+  }
+
+  .admin-app-sidebar-foot .d-grid {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .admin-app-logout {
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.35rem 0.58rem;
+    font-size: 0.74rem;
+    justify-content: center;
   }
 
   .admin-app-topbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.35rem;
+    display: none;
+  }
+
+  .app-main--admin {
+    padding: 0.92rem 0.85rem 1.2rem;
   }
 }

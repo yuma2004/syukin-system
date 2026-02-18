@@ -1,30 +1,15 @@
 import csv
 import json
-from datetime import datetime, timezone
 from io import StringIO
 
-from sqlalchemy import func
-from sqlalchemy.orm import selectinload
-
 from ..config import LOCAL_TZ
-from ..models import Shift, User
-from ..utils.validators import ensure_valid_range
+from ..models import Shift
+from .shift_query_service import apply_shift_user_filters, build_shift_range_query
 
 
 def generate_attendance_csv(start_date, end_date, user_username=None, user_email=None):
-    start_date, end_date = ensure_valid_range(start_date, end_date)
-    start_utc = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=LOCAL_TZ).astimezone(timezone.utc)
-    end_utc = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=LOCAL_TZ).astimezone(timezone.utc)
-
-    query = (
-        Shift.query.options(selectinload(Shift.user), selectinload(Shift.breaks))
-        .join(User)
-        .filter(Shift.clock_in_at >= start_utc, Shift.clock_in_at <= end_utc)
-    )
-    if user_username:
-        query = query.filter(User.username == user_username)
-    elif user_email:
-        query = query.filter(func.lower(User.email) == user_email)
+    query, start_date, end_date = build_shift_range_query(start_date, end_date)
+    query = apply_shift_user_filters(query, user_username=user_username, user_email=user_email)
 
     shifts = query.order_by(Shift.clock_in_at.asc()).all()
 

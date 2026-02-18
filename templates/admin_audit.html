@@ -5,6 +5,7 @@
 <section class="audit-shell">
   <header class="audit-page-header">
     <div>
+      <p class="audit-page-kicker">SECURITY TRACE</p>
       <h1 class="audit-page-title text-balance">監査ログ</h1>
       <p class="audit-page-subtitle text-pretty">管理操作・打刻操作を時系列で確認できます。必要に応じて絞り込みとCSV出力を実行してください。</p>
     </div>
@@ -15,7 +16,15 @@
   </header>
 
   <section class="audit-filter-card">
-    <h2 class="audit-section-title">検索フィルタ</h2>
+    <h2 class="audit-section-title">
+      <span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>
+      <span>検索フィルタ</span>
+    </h2>
+    <div class="audit-filter-chipline" aria-hidden="true">
+      <span class="audit-filter-chip">{{ selected_action if selected_action else "すべてのアクション" }}</span>
+      <span class="audit-filter-chip">{{ selected_username if selected_username else "全ユーザー" }}</span>
+      <span class="audit-filter-chip tabular-nums">最大 {{ limit }} 件</span>
+    </div>
     <form class="audit-filter-form" method="get">
       <div class="audit-filter-group">
         <label class="form-label" for="audit-action">アクション</label>
@@ -51,7 +60,10 @@
 
   <section class="audit-result-card">
     <div class="audit-result-head">
-      <h2 class="audit-section-title">検索結果</h2>
+      <h2 class="audit-section-title">
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+        <span>検索結果</span>
+      </h2>
       <span class="audit-result-count tabular-nums">最新 {{ log_entries|length }} 件</span>
     </div>
 

@@ -15,6 +15,14 @@ from ..utils.security import ensure_csrf
 bp = Blueprint("audit", __name__)
 
 
+def _serve_react_if_enabled():
+    from flask import current_app
+
+    if current_app.config.get("REACT_UI_ENABLED"):
+        return current_app.send_static_file("spa/index.html")
+    return None
+
+
 def _parse_audit_filters(max_limit=500, default_limit=200):
     action = request.args.get("action", "").strip()
     username = request.args.get("username", "").strip()
@@ -40,6 +48,9 @@ def _audit_log_query(action, username):
 def view_logs():
     require_admin()
     ensure_csrf()
+    react_response = _serve_react_if_enabled()
+    if react_response:
+        return react_response
 
     action, username, limit = _parse_audit_filters()
     logs = _audit_log_query(action, username).limit(limit).all()

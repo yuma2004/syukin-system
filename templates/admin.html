@@ -7,6 +7,7 @@
   {% set summary.total_seconds = summary.total_seconds + day.seconds %}
   {% set summary.total_shifts = summary.total_shifts + day.count %}
 {% endfor %}
+{% set summary_scope_label = user_username if user_username else "全ユーザー" %}
 
 <section class="admin-shell">
   <header class="admin-page-header">
@@ -15,9 +16,20 @@
         <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
       </div>
       <div>
+        <p class="admin-page-kicker">MANAGEMENT HUB</p>
         <h1 class="admin-page-title text-balance">管理者ダッシュボード</h1>
         <p class="admin-page-subtitle text-pretty">表示タイムゾーン: {{ LOCAL_TZ_NAME }}。出退勤記録の確認、修正、CSV出力を一元管理できます。</p>
       </div>
+    </div>
+    <div class="admin-page-tools">
+      <a class="btn admin-page-action" href="{{ url_for('audit.view_logs') }}">
+        <span class="material-symbols-outlined" aria-hidden="true">history_edu</span>
+        <span>監査ログ</span>
+      </a>
+      <a class="btn admin-page-action admin-page-action--primary" href="{{ url_for('admin.export_csv', start=start, end=end, username=user_username) }}">
+        <span class="material-symbols-outlined" aria-hidden="true">download</span>
+        <span>この条件でCSV</span>
+      </a>
     </div>
   </header>
 
@@ -32,6 +44,12 @@
       <p class="admin-summary-label">総シフト数</p>
       <p class="admin-summary-value tabular-nums">{{ summary.total_shifts }}<span>件</span></p>
       <p class="admin-summary-note">一致件数: {{ shifts|length }}</p>
+    </div>
+    <div class="admin-summary-divider" aria-hidden="true"></div>
+    <div class="admin-summary-item">
+      <p class="admin-summary-label">対象ユーザー</p>
+      <p class="admin-summary-value admin-summary-value--scope">{{ summary_scope_label }}</p>
+      <p class="admin-summary-note">期間 {{ start }} ～ {{ end }}</p>
     </div>
   </section>
 

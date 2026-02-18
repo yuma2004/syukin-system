@@ -2,12 +2,11 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from flask import abort
-from sqlalchemy.orm import selectinload
 
 from ..config import LOCAL_TZ
 from ..models import Shift, User
+from .shift_query_service import apply_shift_user_filters, build_shift_range_query
 from ..utils.datetime_utils import fmt_hms
-from ..utils.validators import ensure_valid_range
 
 
 def build_admin_overview(start_arg=None, end_arg=None, user_username="", include_candidates=False):
@@ -21,17 +20,8 @@ def build_admin_overview(start_arg=None, end_arg=None, user_username="", include
     except ValueError:
         abort(400, "日付の形式が不正です。YYYY-MM-DD で指定してください。")
 
-    start_date, end_date = ensure_valid_range(start_date, end_date)
-    start_utc = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=LOCAL_TZ).astimezone(timezone.utc)
-    end_utc = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=LOCAL_TZ).astimezone(timezone.utc)
-
-    query = (
-        Shift.query.options(selectinload(Shift.user), selectinload(Shift.breaks))
-        .join(User)
-        .filter(Shift.clock_in_at >= start_utc, Shift.clock_in_at <= end_utc)
-    )
-    if user_username:
-        query = query.filter(User.username == user_username)
+    query, start_date, end_date = build_shift_range_query(start_date, end_date)
+    query = apply_shift_user_filters(query, user_username=user_username)
 
     shifts = query.order_by(Shift.clock_in_at.desc()).all()
 
@@ -112,9 +102,22 @@ def build_shift_detail_payload(shift):
         "clock_out_utc": shift.clock_out_at.isoformat() if shift.clock_out_at else None,
         "clock_in_ip": shift.clock_in_ip,
         "clock_out_ip": shift.clock_out_ip,
+        "clock_in_ua": shift.clock_in_ua,
+        "clock_out_ua": shift.clock_out_ua,
         "worked_seconds": shift.worked_seconds(),
         "worked_hms": fmt_hms(shift.worked_seconds()),
         "break_count": len(shift.breaks),
         "break_seconds": shift.total_break_seconds(),
         "break_hms": fmt_hms(shift.total_break_seconds()),
+        "breaks": [
+            {
+                "id": br.id,
+                "start_at": br.start_at.isoformat() if br.start_at else None,
+                "end_at": br.end_at.isoformat() if br.end_at else None,
+                "is_open": br.end_at is None,
+                "start_at_local": br.start_at.astimezone(LOCAL_TZ).isoformat() if br.start_at else None,
+                "end_at_local": br.end_at.astimezone(LOCAL_TZ).isoformat() if br.end_at else None,
+            }
+            for br in sorted(shift.breaks, key=lambda br: br.start_at or shift.clock_in_at or datetime.min.replace(tzinfo=timezone.utc))
+        ],
     }

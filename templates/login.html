@@ -1,14 +1,22 @@
 {% extends "layout.html" %}
-{% block title %}ログイン - 出退勤システム{% endblock %}
+{% block title %}Login - Attendance System{% endblock %}
+{% block head_extra %}
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+{% endblock %}
 {% block content %}
 <section class="auth-panel">
   <div class="auth-card">
     <header class="auth-header">
+      <p class="auth-kicker">Attendance Control</p>
       <div class="auth-logo" aria-hidden="true">
         <span class="material-symbols-outlined">schedule</span>
       </div>
-      <h1 class="auth-title text-balance">ログイン</h1>
-      <p class="auth-subtitle text-pretty" id="login-help">アカウントにアクセスしてください</p>
+      <h1 class="auth-title text-balance">Login</h1>
+      <p class="auth-subtitle text-pretty" id="login-help">Access your account securely.</p>
+      <p class="auth-security-note">
+        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+        <span>Protected by encrypted SSL/TLS connection</span>
+      </p>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -30,27 +38,27 @@
       <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
 
       <div class="auth-field">
-        <label for="username" class="form-label auth-label">ユーザー名</label>
+        <label for="username" class="form-label auth-label">Username</label>
         <input
           type="text"
           class="form-control auth-input"
           id="username"
           name="username"
-          placeholder="ユーザー名を入力"
+          placeholder="Enter your username"
           required
           autocomplete="username"
         >
       </div>
 
       <div class="auth-field">
-        <label for="password" class="form-label auth-label">パスワード</label>
+        <label for="password" class="form-label auth-label">Password</label>
         <div class="auth-password-wrap">
           <input
             type="password"
             class="form-control auth-input auth-input-password"
             id="password"
             name="password"
-            placeholder="パスワードを入力"
+            placeholder="Enter your password"
             required
             autocomplete="current-password"
           >
@@ -58,7 +66,7 @@
             type="button"
             class="auth-password-toggle"
             id="password-toggle"
-            aria-label="パスワードを表示する"
+            aria-label="Show password"
             aria-controls="password"
             aria-pressed="false"
           >
@@ -69,14 +77,15 @@
 
       <div class="form-check auth-remember">
         <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me" value="on">
-        <label class="form-check-label" for="remember_me">{{ remember_days }}日間ログイン状態を保持する</label>
+        <label class="form-check-label" for="remember_me">Keep me signed in for {{ remember_days }} days</label>
       </div>
 
-      <button type="submit" class="btn btn-primary w-100 auth-submit">ログイン</button>
+      <button type="submit" class="btn btn-primary w-100 auth-submit">Login</button>
+      <p class="auth-note">On shared devices, leave "keep me signed in" turned off.</p>
     </form>
 
     <footer class="auth-footer">
-      <p class="auth-footer-text">© Attendance App. All rights reserved.</p>
+      <p class="auth-footer-text">&copy; Attendance App. All rights reserved.</p>
     </footer>
   </div>
 </section>
@@ -100,10 +109,7 @@
     const applyState = (isVisible) => {
       passwordInput.type = isVisible ? "text" : "password";
       toggleButton.setAttribute("aria-pressed", String(isVisible));
-      toggleButton.setAttribute(
-        "aria-label",
-        isVisible ? "パスワードを非表示にする" : "パスワードを表示する"
-      );
+      toggleButton.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
       if (icon) {
         icon.textContent = isVisible ? "visibility" : "visibility_off";
       }
@@ -117,4 +123,3 @@
   })();
 </script>
 {% endblock %}
-

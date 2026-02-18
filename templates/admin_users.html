@@ -5,8 +5,23 @@
 <section class="user-admin-shell">
   <header class="user-admin-header">
     <div>
+      <p class="user-admin-kicker">USER CONTROL</p>
       <h1 class="user-admin-title text-balance">ユーザー管理</h1>
       <p class="user-admin-subtitle text-pretty">システムを利用するユーザーの登録・編集・削除を行います。</p>
+    </div>
+    <div class="user-admin-summary-strip" aria-label="ユーザーサマリー">
+      <article class="user-admin-summary-card">
+        <p class="user-admin-summary-label">登録ユーザー</p>
+        <p class="user-admin-summary-value tabular-nums">{{ users|length }}<span>名</span></p>
+      </article>
+      <article class="user-admin-summary-card">
+        <p class="user-admin-summary-label">管理者</p>
+        <p class="user-admin-summary-value tabular-nums">{{ users|selectattr("role", "equalto", "admin")|list|length }}<span>名</span></p>
+      </article>
+      <article class="user-admin-summary-card">
+        <p class="user-admin-summary-label">一般ユーザー</p>
+        <p class="user-admin-summary-value tabular-nums">{{ users|selectattr("role", "equalto", "user")|list|length }}<span>名</span></p>
+      </article>
     </div>
   </header>
 
@@ -19,6 +34,10 @@
       <span class="material-symbols-outlined user-admin-disclosure-icon" aria-hidden="true">expand_more</span>
     </summary>
     <div class="user-admin-card-body user-admin-card-body--disclosure">
+      <div class="user-create-tip">
+        <span class="material-symbols-outlined" aria-hidden="true">shield_person</span>
+        <p>アカウント作成後、初回ログイン時にパスワード再設定を案内してください。</p>
+      </div>
       <form method="post" class="user-create-form">
         <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
         <input type="hidden" name="action" value="create">

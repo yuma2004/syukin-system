@@ -1,4 +1,11 @@
 <section class="admin-table-card">
+  <div class="admin-table-head">
+    <h2 class="admin-table-title">
+      <span class="material-symbols-outlined" aria-hidden="true">table_view</span>
+      <span>シフト一覧</span>
+    </h2>
+    <p class="admin-table-meta">表示 {{ shifts|length }} 件</p>
+  </div>
   {% if shifts %}
   <div class="admin-table-wrap desktop-only">
     <table class="table table-sm align-middle mb-0 admin-shift-table" aria-label="シフト一覧">

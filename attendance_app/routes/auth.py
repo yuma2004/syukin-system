@@ -20,7 +20,7 @@ def login():
         password = request.form.get("password", "")
 
         if not username or not password:
-            flash("ユーザーIDとパスワードを入力してください。", "error")
+            flash("ユーザーIDとパスワードを入力してください", "error")
             return redirect(url_for("auth.login"))
 
         user = User.query.filter_by(username=username).first()
@@ -30,11 +30,14 @@ def login():
             db.session.commit()
             login_user(user, remember=remember_me)
             log_audit("login", target_type="user", target_id=user.id, metadata_dict={"username": username})
-            flash("ログインしました。", "success")
+            flash("ログインしました", "success")
             return redirect(url_for("attendance.dashboard"))
 
-        flash("ユーザーIDまたはパスワードが正しくありません。", "error")
+        flash("ユーザーIDまたはパスワードが違います", "error")
         return redirect(url_for("auth.login"))
+
+    if current_app.config.get("REACT_UI_ENABLED"):
+        return current_app.send_static_file("spa/index.html")
 
     remember_days = current_app.config["REMEMBER_COOKIE_DURATION"].days
     return render_template("login.html", remember_days=remember_days)
@@ -48,4 +51,4 @@ def logout():
     verify_csrf()
     log_audit("logout", target_type="user", target_id=current_user.id)
     logout_user()
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.login"))
