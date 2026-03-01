@@ -8,6 +8,7 @@ instance/
 
 # テスト関連
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 test_attendance.db

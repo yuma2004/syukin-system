@@ -657,6 +657,165 @@ def admin_export():
     log_audit("admin_export", target_type="shift", target_id=None, metadata_dict={"start": start_date.isoformat(), "end": end_date.isoformat(), "email": user_email, "shift_count": shift_count})
     return resp
 
+
+def _admin_shift_edit_update_shift(shift, shift_id):
+    old_values = {
+        "clock_in_at": shift.clock_in_at.isoformat() if shift.clock_in_at else None,
+        "clock_out_at": shift.clock_out_at.isoformat() if shift.clock_out_at else None,
+    }
+
+    clock_in_at = parse_local_datetime(request.form.get("clock_in_at"), "出勤時刻")
+    if not clock_in_at:
+        raise ValueError("出勤時刻を入力してください。")
+    clock_out_at = parse_local_datetime(request.form.get("clock_out_at"), "退勤時刻")
+    if clock_out_at and clock_out_at < clock_in_at:
+        raise ValueError("退勤時刻は出勤時刻以降を指定してください。")
+
+    shift.clock_in_at = clock_in_at
+    shift.clock_out_at = clock_out_at
+    db.session.commit()
+
+    new_values = {
+        "clock_in_at": shift.clock_in_at.isoformat() if shift.clock_in_at else None,
+        "clock_out_at": shift.clock_out_at.isoformat() if shift.clock_out_at else None,
+    }
+    log_audit(
+        "admin_shift_edit",
+        target_type="shift",
+        target_id=shift_id,
+        metadata_dict={
+            "user_username": shift.user.username,
+            "user_email": shift.user.email or "",
+            "old_values": old_values,
+            "new_values": new_values,
+        },
+    )
+    flash("出退勤データを更新しました。", "success")
+    return redirect(url_for("admin"))
+
+
+def _parse_break_form_range():
+    start_at = parse_local_datetime(request.form.get("start_at"), "休憩開始時刻")
+    end_at = parse_local_datetime(request.form.get("end_at"), "休憩終了時刻")
+    if not start_at:
+        raise ValueError("休憩開始時刻を入力してください。")
+    if end_at and end_at < start_at:
+        raise ValueError("休憩終了時刻は開始時刻以降を指定してください。")
+    return start_at, end_at
+
+
+def _admin_shift_edit_break_add(shift, shift_id):
+    start_at, end_at = _parse_break_form_range()
+    new_break = Break(shift_id=shift.id, start_at=start_at, end_at=end_at)
+    db.session.add(new_break)
+    db.session.commit()
+    log_audit(
+        "admin_break_add",
+        target_type="break",
+        target_id=new_break.id,
+        metadata_dict={
+            "shift_id": shift.id,
+            "start_at": new_break.start_at.isoformat() if new_break.start_at else None,
+            "end_at": new_break.end_at.isoformat() if new_break.end_at else None,
+        },
+    )
+    flash("休憩を追加しました。", "success")
+    return redirect(url_for("admin_shift_edit", shift_id=shift_id))
+
+
+def _admin_shift_edit_break_update(shift, shift_id):
+    break_id = int(request.form.get("break_id", "0"))
+    target_break = Break.query.filter_by(id=break_id, shift_id=shift_id).first()
+    if not target_break:
+        abort(404, "指定された休憩が見つかりません。")
+
+    old_values = {
+        "start_at": target_break.start_at.isoformat() if target_break.start_at else None,
+        "end_at": target_break.end_at.isoformat() if target_break.end_at else None,
+    }
+    start_at, end_at = _parse_break_form_range()
+    target_break.start_at = start_at
+    target_break.end_at = end_at
+    db.session.commit()
+
+    new_values = {
+        "start_at": target_break.start_at.isoformat() if target_break.start_at else None,
+        "end_at": target_break.end_at.isoformat() if target_break.end_at else None,
+    }
+    log_audit(
+        "admin_break_update",
+        target_type="break",
+        target_id=target_break.id,
+        metadata_dict={
+            "shift_id": shift.id,
+            "old_values": old_values,
+            "new_values": new_values,
+        },
+    )
+    flash("休憩を更新しました。", "success")
+    return redirect(url_for("admin_shift_edit", shift_id=shift_id))
+
+
+def _admin_shift_edit_break_delete(shift, shift_id):
+    break_id = int(request.form.get("break_id", "0"))
+    target_break = Break.query.filter_by(id=break_id, shift_id=shift_id).first()
+    if not target_break:
+        abort(404, "指定された休憩が見つかりません。")
+
+    metadata = {
+        "shift_id": shift.id,
+        "start_at": target_break.start_at.isoformat() if target_break.start_at else None,
+        "end_at": target_break.end_at.isoformat() if target_break.end_at else None,
+    }
+    db.session.delete(target_break)
+    db.session.commit()
+    log_audit("admin_break_delete", target_type="break", target_id=break_id, metadata_dict=metadata)
+    flash("休憩を削除しました。", "success")
+    return redirect(url_for("admin_shift_edit", shift_id=shift_id))
+
+
+def _admin_shift_edit_break_reset(shift, shift_id):
+    deleted_ids = [b.id for b in shift.breaks]
+    for b in list(shift.breaks):
+        db.session.delete(b)
+    db.session.commit()
+    log_audit("admin_break_reset", target_type="shift", target_id=shift_id, metadata_dict={"deleted_break_ids": deleted_ids})
+    flash("休憩をリセットしました。", "success")
+    return redirect(url_for("admin_shift_edit", shift_id=shift_id))
+
+
+def _admin_shift_edit_action(shift, shift_id, action):
+    if action == "update_shift":
+        return _admin_shift_edit_update_shift(shift, shift_id)
+    if action == "break_add":
+        return _admin_shift_edit_break_add(shift, shift_id)
+    if action == "break_update":
+        return _admin_shift_edit_break_update(shift, shift_id)
+    if action == "break_delete":
+        return _admin_shift_edit_break_delete(shift, shift_id)
+    if action == "break_reset":
+        return _admin_shift_edit_break_reset(shift, shift_id)
+    flash("不正な操作です。", "error")
+    return None
+
+
+def _build_shift_break_entries(shift):
+    break_entries = []
+    ordered_breaks = sorted(shift.breaks, key=lambda b: (b.start_at or datetime.min.replace(tzinfo=timezone.utc)))
+    for br in ordered_breaks:
+        break_entries.append(
+            {
+                "id": br.id,
+                "start_form": format_local_form_value(br.start_at),
+                "end_form": format_local_form_value(br.end_at),
+                "start_utc": br.start_at.isoformat() if br.start_at else None,
+                "end_utc": br.end_at.isoformat() if br.end_at else None,
+                "is_open": br.end_at is None,
+            }
+        )
+    return break_entries
+
+
 @app.route("/admin/shift/<int:shift_id>/edit", methods=["GET", "POST"])
 @login_required
 def admin_shift_edit(shift_id):
@@ -671,118 +830,9 @@ def admin_shift_edit(shift_id):
         action = request.form.get("action", "update_shift")
         
         try:
-            if action == "update_shift":
-                old_values = {
-                    "clock_in_at": shift.clock_in_at.isoformat() if shift.clock_in_at else None,
-                    "clock_out_at": shift.clock_out_at.isoformat() if shift.clock_out_at else None,
-                }
-
-                clock_in_at = parse_local_datetime(request.form.get("clock_in_at"), "出勤時刻")
-                if not clock_in_at:
-                    raise ValueError("出勤時刻を入力してください。")
-                clock_out_at = parse_local_datetime(request.form.get("clock_out_at"), "退勤時刻")
-                if clock_out_at and clock_out_at < clock_in_at:
-                    raise ValueError("退勤時刻は出勤時刻以降を指定してください。")
-
-                shift.clock_in_at = clock_in_at
-                shift.clock_out_at = clock_out_at
-                
-                db.session.commit()
-                
-                new_values = {
-                    "clock_in_at": shift.clock_in_at.isoformat() if shift.clock_in_at else None,
-                    "clock_out_at": shift.clock_out_at.isoformat() if shift.clock_out_at else None,
-                }
-                
-                log_audit("admin_shift_edit", target_type="shift", target_id=shift_id,
-                         metadata_dict={
-                             "user_username": shift.user.username,
-                             "user_email": shift.user.email or "",
-                             "old_values": old_values,
-                             "new_values": new_values,
-                         })
-                flash("出退勤データを更新しました。", "success")
-                return redirect(url_for("admin"))
-            
-            elif action == "break_add":
-                start_at = parse_local_datetime(request.form.get("start_at"), "休憩開始時刻")
-                end_at = parse_local_datetime(request.form.get("end_at"), "休憩終了時刻")
-                if not start_at:
-                    raise ValueError("休憩開始時刻を入力してください。")
-                if end_at and end_at < start_at:
-                    raise ValueError("休憩終了時刻は開始時刻以降を指定してください。")
-                new_break = Break(shift_id=shift.id, start_at=start_at, end_at=end_at)
-                db.session.add(new_break)
-                db.session.commit()
-                log_audit("admin_break_add", target_type="break", target_id=new_break.id,
-                         metadata_dict={
-                             "shift_id": shift.id,
-                             "start_at": new_break.start_at.isoformat() if new_break.start_at else None,
-                             "end_at": new_break.end_at.isoformat() if new_break.end_at else None,
-                         })
-                flash("休憩を追加しました。", "success")
-                return redirect(url_for("admin_shift_edit", shift_id=shift_id))
-            
-            elif action == "break_update":
-                break_id = int(request.form.get("break_id", "0"))
-                target_break = Break.query.filter_by(id=break_id, shift_id=shift_id).first()
-                if not target_break:
-                    abort(404, "指定された休憩が見つかりません。")
-                old_values = {
-                    "start_at": target_break.start_at.isoformat() if target_break.start_at else None,
-                    "end_at": target_break.end_at.isoformat() if target_break.end_at else None,
-                }
-                start_at = parse_local_datetime(request.form.get("start_at"), "休憩開始時刻")
-                end_at = parse_local_datetime(request.form.get("end_at"), "休憩終了時刻")
-                if not start_at:
-                    raise ValueError("休憩開始時刻を入力してください。")
-                if end_at and end_at < start_at:
-                    raise ValueError("休憩終了時刻は開始時刻以降を指定してください。")
-                target_break.start_at = start_at
-                target_break.end_at = end_at
-                db.session.commit()
-                new_values = {
-                    "start_at": target_break.start_at.isoformat() if target_break.start_at else None,
-                    "end_at": target_break.end_at.isoformat() if target_break.end_at else None,
-                }
-                log_audit("admin_break_update", target_type="break", target_id=target_break.id,
-                         metadata_dict={
-                             "shift_id": shift.id,
-                             "old_values": old_values,
-                             "new_values": new_values,
-                         })
-                flash("休憩を更新しました。", "success")
-                return redirect(url_for("admin_shift_edit", shift_id=shift_id))
-            
-            elif action == "break_delete":
-                break_id = int(request.form.get("break_id", "0"))
-                target_break = Break.query.filter_by(id=break_id, shift_id=shift_id).first()
-                if not target_break:
-                    abort(404, "指定された休憩が見つかりません。")
-                metadata = {
-                    "shift_id": shift.id,
-                    "start_at": target_break.start_at.isoformat() if target_break.start_at else None,
-                    "end_at": target_break.end_at.isoformat() if target_break.end_at else None,
-                }
-                db.session.delete(target_break)
-                db.session.commit()
-                log_audit("admin_break_delete", target_type="break", target_id=break_id,
-                         metadata_dict=metadata)
-                flash("休憩を削除しました。", "success")
-                return redirect(url_for("admin_shift_edit", shift_id=shift_id))
-            
-            elif action == "break_reset":
-                deleted_ids = [b.id for b in shift.breaks]
-                for b in list(shift.breaks):
-                    db.session.delete(b)
-                db.session.commit()
-                log_audit("admin_break_reset", target_type="shift", target_id=shift_id,
-                         metadata_dict={"deleted_break_ids": deleted_ids})
-                flash("休憩をリセットしました。", "success")
-                return redirect(url_for("admin_shift_edit", shift_id=shift_id))
-            
-            else:
-                flash("不正な操作です。", "error")
+            response = _admin_shift_edit_action(shift, shift_id, action)
+            if response is not None:
+                return response
         except ValueError as e:
             flash(str(e), "error")
         except Exception as e:
@@ -792,18 +842,7 @@ def admin_shift_edit(shift_id):
     
     clock_in_form = format_local_form_value(shift.clock_in_at)
     clock_out_form = format_local_form_value(shift.clock_out_at)
-    
-    break_entries = []
-    ordered_breaks = sorted(shift.breaks, key=lambda b: (b.start_at or datetime.min.replace(tzinfo=timezone.utc)))
-    for br in ordered_breaks:
-        break_entries.append({
-            "id": br.id,
-            "start_form": format_local_form_value(br.start_at),
-            "end_form": format_local_form_value(br.end_at),
-            "start_utc": br.start_at.isoformat() if br.start_at else None,
-            "end_utc": br.end_at.isoformat() if br.end_at else None,
-            "is_open": br.end_at is None,
-        })
+    break_entries = _build_shift_break_entries(shift)
     
     return render_template("shift_edit.html", shift=shift,
                           clock_in_form=clock_in_form, clock_out_form=clock_out_form,
@@ -963,6 +1002,92 @@ def admin_audit_export():
 
     return resp
 
+
+def _admin_users_create():
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    role = request.form.get("role", "user")
+
+    if not username or not password:
+        flash("ユーザーIDとパスワードは必須です。", "error")
+        return redirect(url_for("admin_users"))
+
+    if User.query.filter_by(username=username).first():
+        flash("このユーザーIDは既に使用されています。", "error")
+        return redirect(url_for("admin_users"))
+    if email and User.query.filter_by(email=email).first():
+        flash("このメールアドレスは既に使用されています。", "error")
+        return redirect(url_for("admin_users"))
+
+    user = User(username=username, name=name or None, email=email or None, role=role)
+    user.set_password(password)
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash("ユーザーの作成中にエラーが発生しました。入力内容を確認してください。", "error")
+        return redirect(url_for("admin_users"))
+    log_audit("admin_user_create", target_type="user", target_id=user.id, metadata_dict={"username": username, "role": role})
+    flash("ユーザーを作成しました。", "success")
+    return redirect(url_for("admin_users"))
+
+
+def _admin_users_update():
+    user_id = request.form.get("user_id")
+    user = _get_by_pk_or_404(User, user_id, description="指定されたユーザーが見つかりません。")
+
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    role = request.form.get("role", "user")
+    password = request.form.get("password", "").strip()
+
+    if email:
+        existing = User.query.filter(User.email == email, User.id != user.id).first()
+        if existing:
+            flash("このメールアドレスは既に使用されています。", "error")
+            return redirect(url_for("admin_users"))
+    user.name = name or None
+    user.email = email or None
+    user.role = role
+
+    if password:
+        user.set_password(password)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash("ユーザーの更新に失敗しました。入力内容を確認してください。", "error")
+        return redirect(url_for("admin_users"))
+    log_audit(
+        "admin_user_update",
+        target_type="user",
+        target_id=user.id,
+        metadata_dict={"username": user.username, "role": role, "password_changed": bool(password)},
+    )
+    flash("ユーザーを更新しました。", "success")
+    return redirect(url_for("admin_users"))
+
+
+def _admin_users_delete():
+    user_id = request.form.get("user_id")
+    user = _get_by_pk_or_404(User, user_id, description="指定されたユーザーが見つかりません。")
+
+    if user.id == current_user.id:
+        flash("自分自身を削除することはできません。", "error")
+        return redirect(url_for("admin_users"))
+
+    username = user.username
+    AuditLog.query.filter_by(user_id=user.id).update({"user_id": None})
+    db.session.delete(user)
+    db.session.commit()
+    log_audit("admin_user_delete", target_type="user", target_id=user_id, metadata_dict={"username": username})
+    flash("ユーザーを削除しました。", "success")
+    return redirect(url_for("admin_users"))
+
+
 @app.route("/admin/users", methods=["GET", "POST"])
 @login_required
 def admin_users():
@@ -973,86 +1098,13 @@ def admin_users():
     if request.method == "POST":
         verify_csrf()
         action = request.form.get("action")
-        
-        if action == "create":
-            username = request.form.get("username", "").strip()
-            password = request.form.get("password", "")
-            name = request.form.get("name", "").strip()
-            email = request.form.get("email", "").strip()
-            role = request.form.get("role", "user")
-            
-            if not username or not password:
-                flash("ユーザーIDとパスワードは必須です。", "error")
-                return redirect(url_for("admin_users"))
-            
-            if User.query.filter_by(username=username).first():
-                flash("このユーザーIDは既に使用されています。", "error")
-                return redirect(url_for("admin_users"))
-            if email and User.query.filter_by(email=email).first():
-                flash("このメールアドレスは既に使用されています。", "error")
-                return redirect(url_for("admin_users"))
-            
-            user = User(username=username, name=name or None, email=email or None, role=role)
-            user.set_password(password)
-            try:
-                db.session.add(user)
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                flash("ユーザーの作成中にエラーが発生しました。入力内容を確認してください。", "error")
-                return redirect(url_for("admin_users"))
-            log_audit("admin_user_create", target_type="user", target_id=user.id, 
-                     metadata_dict={"username": username, "role": role})
-            flash("ユーザーを作成しました。", "success")
-            return redirect(url_for("admin_users"))
-        
-        elif action == "update":
-            user_id = request.form.get("user_id")
-            user = _get_by_pk_or_404(User, user_id, description="指定されたユーザーが見つかりません。")
-            
-            name = request.form.get("name", "").strip()
-            email = request.form.get("email", "").strip()
-            role = request.form.get("role", "user")
-            password = request.form.get("password", "").strip()
 
-            if email:
-                existing = User.query.filter(User.email == email, User.id != user.id).first()
-                if existing:
-                    flash("このメールアドレスは既に使用されています。", "error")
-                    return redirect(url_for("admin_users"))
-            user.name = name or None
-            user.email = email or None
-            user.role = role
-            
-            if password:
-                user.set_password(password)
-            try:
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                flash("ユーザーの更新に失敗しました。入力内容を確認してください。", "error")
-                return redirect(url_for("admin_users"))
-            log_audit("admin_user_update", target_type="user", target_id=user.id,
-                     metadata_dict={"username": user.username, "role": role, "password_changed": bool(password)})
-            flash("ユーザーを更新しました。", "success")
-            return redirect(url_for("admin_users"))
-        
-        elif action == "delete":
-            user_id = request.form.get("user_id")
-            user = _get_by_pk_or_404(User, user_id, description="指定されたユーザーが見つかりません。")
-            
-            if user.id == current_user.id:
-                flash("自分自身を削除することはできません。", "error")
-                return redirect(url_for("admin_users"))
-            
-            username = user.username
-            AuditLog.query.filter_by(user_id=user.id).update({"user_id": None})
-            db.session.delete(user)
-            db.session.commit()
-            log_audit("admin_user_delete", target_type="user", target_id=user_id,
-                     metadata_dict={"username": username})
-            flash("ユーザーを削除しました。", "success")
-            return redirect(url_for("admin_users"))
+        if action == "create":
+            return _admin_users_create()
+        if action == "update":
+            return _admin_users_update()
+        if action == "delete":
+            return _admin_users_delete()
     
     users = User.query.order_by(User.username.asc()).all()
     return render_template("admin_users.html", users=users)
