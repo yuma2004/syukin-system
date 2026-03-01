@@ -1,185 +1,220 @@
-"""
-テスト設定とフィクスチャ
-"""
 import os
 import tempfile
+import uuid
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
 import pytest
-import secrets
-from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
 
-# Windows環境でのパス問題を回避するため、app.pyを直接インポート
-import sys
-# プロジェクトルートをパスに追加
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+_TEST_DB_PATH = Path(tempfile.gettempdir()) / f"syukin_system_test_{uuid.uuid4().hex}.db"
+os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB_PATH.as_posix()}"
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("TIMEZONE", "Asia/Tokyo")
 
-from app import app, db, User, Shift, Break, AuditLog  # noqa: E402
+from app import AuditLog, Break, Shift, User, app as flask_app, db  # noqa: E402
 
-@pytest.fixture(scope='session')
-def app_config():
-    """テスト用アプリケーション設定"""
-    # 一時的なSQLiteデータベースを使用
-    # Windows環境でのパス問題を回避するため、絶対パスを使用
-    db_fd, db_path = tempfile.mkstemp(suffix='.db')
-    os.close(db_fd)
-    
-    # Windows環境でのパス問題を回避
-    db_uri = f'sqlite:///{db_path.replace(os.sep, "/")}'
-    
-    config = {
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': db_uri,
-        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-        'SECRET_KEY': 'test-secret-key-for-testing-only',
-        'WTF_CSRF_ENABLED': False,  # テストではCSRFを無効化
-    }
-    
-    yield config
-    
-    # クリーンアップ
-    try:
-        if os.path.exists(db_path):
-            os.unlink(db_path)
-    except Exception:
-        pass
+
+def _set_csrf_token(client, token="test-csrf-token"):
+    with client.session_transaction() as session:
+        session["csrf_token"] = token
+    return token
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _cleanup_test_db_file():
+    yield
+    with flask_app.app_context():
+        db.session.remove()
+        db.engine.dispose()
+    if _TEST_DB_PATH.exists():
+        _TEST_DB_PATH.unlink(missing_ok=True)
+
 
 @pytest.fixture
-def client(app_config):
-    """テストクライアント"""
-    # テスト用にCSRF検証を無効化するためのモンキーパッチ
-    import app as app_module
-    original_verify_csrf = app_module.verify_csrf
-    
-    def mock_verify_csrf():
-        """テスト用のCSRF検証をスキップ"""
-        pass
-    
-    # モンキーパッチを適用
-    app_module.verify_csrf = mock_verify_csrf
-    
-    # Flaskアプリケーションインスタンスの設定を更新
-    app.config.update(app_config)
-    
-    with app.test_client() as client:
+def app():
+    flask_app.config.update(TESTING=True)
+    return flask_app
+
+
+@pytest.fixture(autouse=True)
+def _reset_database(app):
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()
+        db.create_all()
+        yield
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
+
+
+@pytest.fixture
+def set_csrf_token():
+    return _set_csrf_token
+
+
+@pytest.fixture
+def create_user(app):
+    def _create(
+        *,
+        username,
+        password="password123",
+        role="user",
+        name=None,
+        email=None,
+    ):
         with app.app_context():
-            db.create_all()
-            yield client
-            db.session.remove()
-            db.drop_all()
-    
-    # 元に戻す
-    app_module.verify_csrf = original_verify_csrf
+            user = User(
+                username=username,
+                role=role,
+                name=name,
+                email=email,
+            )
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            return user.id
+
+    return _create
+
 
 @pytest.fixture
-def csrf_token(client):
-    """CSRFトークンを取得するヘルパー"""
-    with client.session_transaction() as sess:
-        token = secrets.token_urlsafe(32)
-        sess['csrf_token'] = token
-        return token
-
-@pytest.fixture
-def test_user(client):
-    """テスト用の通常ユーザー"""
-    user = User.query.filter_by(username='testuser').first()
-    if user is None:
-        user = User(
-            username='testuser',
-            email='test@example.com',
-            name='テストユーザー',
-            role='user'
+def login_as(client, create_user, set_csrf_token):
+    def _login(
+        *,
+        username,
+        password="password123",
+        role="user",
+        name=None,
+        email=None,
+    ):
+        user_id = create_user(
+            username=username,
+            password=password,
+            role=role,
+            name=name,
+            email=email,
         )
-        db.session.add(user)
-
-    # 既存データが残っていても同じ資格情報に揃える
-    user.email = 'test@example.com'
-    user.name = 'テストユーザー'
-    user.role = 'user'
-    user.set_password('testpass123')
-    db.session.commit()
-    return user
-
-@pytest.fixture
-def admin_user(client):
-    """テスト用の管理者ユーザー"""
-    admin = User.query.filter_by(username='admin').first()
-    if admin is None:
-        admin = User(
-            username='admin',
-            email='admin@example.com',
-            name='管理者',
-            role='admin'
+        token = set_csrf_token(client)
+        response = client.post(
+            "/login",
+            data={
+                "username": username,
+                "password": password,
+                "csrf_token": token,
+            },
+            follow_redirects=False,
         )
-        db.session.add(admin)
+        assert response.status_code == 302
+        return user_id
 
-    # 既存データが残っていても同じ資格情報に揃える
-    admin.email = 'admin@example.com'
-    admin.name = '管理者'
-    admin.role = 'admin'
-    admin.set_password('adminpass123')
-    db.session.commit()
-    return admin
+    return _login
+
 
 @pytest.fixture
-def logged_in_user(client, test_user, csrf_token):
-    """ログイン済みの通常ユーザー"""
-    with client.session_transaction() as sess:
-        sess['_user_id'] = str(test_user.id)
-        sess['csrf_token'] = csrf_token
-    return test_user
+def login_as_admin(login_as):
+    def _login(*, username="admin", password="admin-password", name=None, email=None):
+        return login_as(
+            username=username,
+            password=password,
+            role="admin",
+            name=name,
+            email=email,
+        )
+
+    return _login
+
 
 @pytest.fixture
-def logged_in_admin(client, admin_user, csrf_token):
-    """ログイン済みの管理者ユーザー"""
-    with client.session_transaction() as sess:
-        sess['_user_id'] = str(admin_user.id)
-        sess['csrf_token'] = csrf_token
-    return admin_user
-
-@pytest.fixture
-def sample_shift(client, test_user):
-    """テスト用の出退勤記録"""
-    now = datetime.now(timezone.utc)
-    shift = Shift(
-        user_id=test_user.id,
-        clock_in_at=now - timedelta(hours=8),
-        clock_out_at=now,
-        clock_in_ip='127.0.0.1',
-        clock_in_ua='Test User Agent'
-    )
-    db.session.add(shift)
-    db.session.commit()
-    return shift
-
-@pytest.fixture
-def open_shift(client, test_user):
-    """テスト用の出勤中記録"""
-    now = datetime.now(timezone.utc)
-    shift = Shift(
-        user_id=test_user.id,
-        clock_in_at=now - timedelta(hours=2),
+def create_shift(app):
+    def _create(
+        *,
+        user_id,
+        clock_in_at=None,
         clock_out_at=None,
-        clock_in_ip='127.0.0.1',
-        clock_in_ua='Test User Agent'
-    )
-    db.session.add(shift)
-    db.session.commit()
-    return shift
+        break_start_at=None,
+        break_end_at=None,
+    ):
+        with app.app_context():
+            clock_in = clock_in_at or datetime(2026, 1, 5, 0, 0, tzinfo=timezone.utc)
+            shift = Shift(
+                user_id=user_id,
+                clock_in_at=clock_in,
+                clock_out_at=clock_out_at,
+            )
+            db.session.add(shift)
+            db.session.commit()
+
+            if break_start_at is not None or break_end_at is not None:
+                start_at = break_start_at or (clock_in + timedelta(hours=1))
+                new_break = Break(
+                    shift_id=shift.id,
+                    start_at=start_at,
+                    end_at=break_end_at,
+                )
+                db.session.add(new_break)
+                db.session.commit()
+
+            return shift.id
+
+    return _create
+
 
 @pytest.fixture
-def sample_break(client, open_shift):
-    """テスト用の休憩記録"""
-    now = datetime.now(timezone.utc)
-    break_record = Break(
-        shift_id=open_shift.id,
-        start_at=now - timedelta(minutes=30),
-        end_at=None,
-        start_ip='127.0.0.1',
-        start_ua='Test User Agent'
-    )
-    db.session.add(break_record)
-    db.session.commit()
-    return break_record
+def create_audit_log(app):
+    def _create(
+        *,
+        action,
+        user_id=None,
+        target_type=None,
+        target_id=None,
+        ip="127.0.0.1",
+        user_agent="pytest-agent",
+        metadata_dict=None,
+        metadata_json=None,
+        signature="test-signature",
+        created_at=None,
+    ):
+        with app.app_context():
+            if metadata_json is None:
+                if metadata_dict is None:
+                    metadata_json_value = "{}"
+                else:
+                    import json
 
+                    metadata_json_value = json.dumps(metadata_dict, ensure_ascii=False, separators=(",", ":"))
+            else:
+                metadata_json_value = metadata_json
+
+            entry = AuditLog(
+                user_id=user_id,
+                action=action,
+                target_type=target_type,
+                target_id=target_id,
+                ip=ip,
+                user_agent=user_agent,
+                metadata_json=metadata_json_value,
+                signature=signature,
+                created_at=created_at or datetime.now(timezone.utc),
+            )
+            db.session.add(entry)
+            db.session.commit()
+            return entry.id
+
+    return _create
+
+
+@pytest.fixture
+def list_audit_logs(app):
+    def _list(*, action=None):
+        with app.app_context():
+            query = AuditLog.query.order_by(AuditLog.id.asc())
+            if action:
+                query = query.filter_by(action=action)
+            return query.all()
+
+    return _list
